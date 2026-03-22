@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Trash2, ChevronDown, ChevronUp, History, Plus, X as CloseIcon, Check } from 'lucide-react';
 import type { Benefit } from '../types/index';
 import { calculateCurrentUsedAmount } from '../utils/dateUtils';
 import { getDisplayBenefitName } from '../utils/stringUtils';
+import { formatBenefitValue, getFrequencyLabel } from '../utils/formatUtils';
+import { STATUS_COLORS } from '../constants';
 
 interface BenefitItemProps {
   benefit: Benefit;
@@ -13,7 +15,14 @@ interface BenefitItemProps {
   hideAddButton?: boolean;
 }
 
-export const BenefitItem: React.FC<BenefitItemProps> = ({ benefit, onAddUsage, onDeleteUsage, anniversaryDate, hideBorder, hideAddButton }) => {
+export const BenefitItem: React.FC<BenefitItemProps> = ({ 
+  benefit, 
+  onAddUsage, 
+  onDeleteUsage, 
+  anniversaryDate, 
+  hideBorder, 
+  hideAddButton 
+}) => {
   const [quickAmount, setQuickAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [usageDate, setUsageDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -27,12 +36,6 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({ benefit, onAddUsage, o
   const percent = Math.min(100, (currentUsedAmount / benefit.totalAmount) * 100);
 
   const isMonetary = !benefit.unit || benefit.unit === '$';
-  
-  const formatValue = (val: number) => {
-    if (isMonetary) return `$${val.toFixed(2)}`;
-    return `${val} ${benefit.unit}`;
-  };
-
   const displayName = getDisplayBenefitName(benefit.name);
 
   const getStatusColor = () => {
@@ -52,13 +55,9 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({ benefit, onAddUsage, o
     }
   };
 
-  const getFrequencyDisplay = () => {
-    return benefit.frequency.replace('_', ' ');
-  };
-
   const subHeaderParts = [
-    formatValue(benefit.totalAmount),
-    getFrequencyDisplay(),
+    formatBenefitValue(benefit.totalAmount, benefit.unit),
+    getFrequencyLabel(benefit.frequency),
     benefit.category?.toLowerCase()
   ].filter(Boolean);
 
@@ -67,7 +66,7 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({ benefit, onAddUsage, o
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
           <h4 style={{ margin: 0 }}>{displayName}</h4>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
             <span>{subHeaderParts.join(' • ')}</span>
           </div>
         </div>
@@ -107,14 +106,14 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({ benefit, onAddUsage, o
           />
           <button 
             onClick={handleAdd} 
-            style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', color: STATUS_COLORS.SUCCESS, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
             title="Confirm"
           >
             <Check size={16} />
           </button>
           <button 
             onClick={() => setShowAddForm(false)} 
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', color: STATUS_COLORS.MUTED, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
             title="Cancel"
           >
             <CloseIcon size={16} />
@@ -164,25 +163,25 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({ benefit, onAddUsage, o
             </button>
           )}
         </div>
-        <div style={{ fontSize: '0.75rem', textAlign: 'right', color: remainingPercent < 10 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: '500' }}>
-          {remaining > 0 ? `${formatValue(remaining)} remaining` : 'Fully used!'}
+        <div style={{ fontSize: '0.75rem', textAlign: 'right', color: remainingPercent < 10 ? STATUS_COLORS.DANGER : STATUS_COLORS.MUTED, fontWeight: '500' }}>
+          {remaining > 0 ? `${formatBenefitValue(remaining, benefit.unit)} remaining` : 'Fully used!'}
         </div>
       </div>
 
       {showHistory && (
         <div style={{ marginTop: '10px', maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '8px' }}>
           {benefit.usages.length === 0 ? (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>No entries yet</div>
+            <div style={{ fontSize: '0.75rem', color: STATUS_COLORS.MUTED, textAlign: 'center' }}>No entries yet</div>
           ) : (
             benefit.usages.slice().sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((usage) => (
               <div key={usage.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '500' }}>{formatValue(usage.amount)} - {usage.description}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>{new Date(usage.date).toLocaleDateString()}</div>
+                  <div style={{ fontWeight: '500' }}>{formatBenefitValue(usage.amount, benefit.unit)} - {usage.description}</div>
+                  <div style={{ color: STATUS_COLORS.MUTED, fontSize: '0.65rem' }}>{new Date(usage.date).toLocaleDateString()}</div>
                 </div>
                 <button 
                   onClick={() => onDeleteUsage(benefit.id, usage.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '2px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: STATUS_COLORS.DANGER, padding: '2px' }}
                 >
                   <Trash2 size={12} />
                 </button>

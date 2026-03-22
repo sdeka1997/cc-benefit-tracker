@@ -15,9 +15,10 @@ import {
   subMonths,
   subDays
 } from 'date-fns';
+import type { Benefit } from '../types/index';
+import { STATUS_COLORS, DEFAULT_INTERVALS } from '../constants';
 
 export { parseISO, isAfter };
-import type { Benefit } from '../types/index';
 
 export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string): Date => {
   const now = new Date();
@@ -30,11 +31,12 @@ export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string
     if (isAfter(date, now)) date = subYears(date, 1);
     
     // If it's multi-year anniversary, we need to find the specific start of the current multi-year period
-    if (benefit.resetIntervalMonths && benefit.resetIntervalMonths > 12) {
+    const intervalMonths = benefit.resetIntervalMonths || DEFAULT_INTERVALS.ANNUAL_ROLLING;
+    if (intervalMonths > 12) {
       // Find how many intervals since baseDate
       let checkDate = baseDate;
-      while (isBefore(addMonths(checkDate, benefit.resetIntervalMonths), now) || addMonths(checkDate, benefit.resetIntervalMonths).getTime() === now.getTime()) {
-        checkDate = addMonths(checkDate, benefit.resetIntervalMonths);
+      while (isBefore(addMonths(checkDate, intervalMonths), now) || addMonths(checkDate, intervalMonths).getTime() === now.getTime()) {
+        checkDate = addMonths(checkDate, intervalMonths);
       }
       return checkDate;
     }
@@ -129,7 +131,7 @@ export const getPeriodEndDate = (benefit: Benefit, anniversaryDateStr?: string):
     case 'annually':
       return subDays(addYears(startDate, 1), 1);
     case 'anniversary':
-      const interval = benefit.resetIntervalMonths || 12;
+      const interval = benefit.resetIntervalMonths || DEFAULT_INTERVALS.ANNUAL_ROLLING;
       return subDays(addMonths(startDate, interval), 1);
     case 'interval':
       if (benefit.usages.length > 0 && benefit.resetIntervalMonths) {
@@ -138,8 +140,6 @@ export const getPeriodEndDate = (benefit: Benefit, anniversaryDateStr?: string):
         );
         return subDays(addMonths(parseISO(lastUsage.date), benefit.resetIntervalMonths), 1);
       } else if (benefit.resetIntervalMonths) {
-          // If no usage, it expires never or far in future? User said "interval has last used date".
-          // If it hasn't been used, maybe it's valid from now?
           return addYears(now, 10);
       }
       return addYears(now, 4);
@@ -155,7 +155,7 @@ export const getDaysRemaining = (benefit: Benefit, anniversaryDateStr?: string):
 };
 
 export const getStatusColor = (days: number): string => {
-  if (days <= 7) return 'var(--danger)';
-  if (days <= 14) return 'var(--warning)';
-  return 'var(--success)';
+  if (days <= 7) return STATUS_COLORS.DANGER;
+  if (days <= 14) return STATUS_COLORS.WARNING;
+  return STATUS_COLORS.SUCCESS;
 };
