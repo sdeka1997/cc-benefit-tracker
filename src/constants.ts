@@ -112,11 +112,10 @@ export interface ResetTypeOption {
 }
 
 export const RESET_TYPES: ResetTypeOption[] = [
-  { id: 'calendar_monthly', label: 'Monthly (Calendar)', frequency: 'monthly', periodType: 'calendar' },
-  { id: 'calendar_quarterly', label: 'Quarterly (Calendar)', frequency: 'quarterly', periodType: 'calendar' },
-  { id: 'calendar_semi_annually', label: 'Semi-Annual (Calendar)', frequency: 'semi_annually', periodType: 'calendar' },
-  { id: 'calendar_annually', label: 'Annual (Calendar Year)', frequency: 'annually', periodType: 'calendar' },
-  { id: 'rolling_annually', label: 'Annual (Anniversary)', frequency: 'annually', periodType: 'rolling' },
+  { id: 'calendar_monthly', label: 'Monthly', frequency: 'monthly', periodType: 'calendar' },
+  { id: 'calendar_quarterly', label: 'Quarterly', frequency: 'quarterly', periodType: 'calendar' },
+  { id: 'calendar_semi_annually', label: 'Semi-Annual', frequency: 'semi_annually', periodType: 'calendar' },
+  { id: 'calendar_annually', label: 'Annual', frequency: 'annually', periodType: 'calendar' },
   { id: 'rolling_anniversary', label: 'Anniversary', frequency: 'anniversary', periodType: 'rolling' },
   { id: 'rolling_interval', label: 'Interval', frequency: 'interval', periodType: 'rolling', hasInterval: true },
 ];

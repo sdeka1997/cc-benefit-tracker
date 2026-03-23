@@ -58,7 +58,7 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ onClose, currentCard
             ...template,
             id: crypto.randomUUID(),
             templateId: template.id,
-            anniversaryDate: new Date().toISOString(),
+            anniversaryDate: '', // Start completely blank, do not default to today
             isAnniversarySet: false, // New cards need their anniversary set
             benefits: template.benefits.map(b => ({ ...b, id: crypto.randomUUID() }))
           });

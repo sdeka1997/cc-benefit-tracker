@@ -4,6 +4,7 @@ import {
   isAfter,
   addYears,
   addMonths,
+  addDays,
   setYear,
   isBefore,
   parseISO,
@@ -23,10 +24,10 @@ export { parseISO, isAfter };
 export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string): Date => {
   const now = new Date();
   const frequency = benefit.frequency.toLowerCase();
-  const isRolling = benefit.periodType === 'rolling';
+  const isRolling = frequency === 'anniversary' || frequency === 'interval';
 
   if (frequency === 'anniversary') {
-    const baseDate = anniversaryDateStr ? parseISO(anniversaryDateStr) : now;
+    const baseDate = anniversaryDateStr && anniversaryDateStr !== '' ? parseISO(anniversaryDateStr) : now;
     let date = setYear(baseDate, now.getFullYear());
     if (isAfter(date, now)) date = subYears(date, 1);
     
@@ -53,7 +54,7 @@ export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string
     return new Date(0);
   }
 
-  if (isRolling && anniversaryDateStr) {
+  if (isRolling && anniversaryDateStr && anniversaryDateStr !== '') {
     const anniv = parseISO(anniversaryDateStr);
     
     switch (frequency) {
@@ -154,7 +155,8 @@ export const getDaysRemaining = (benefit: Benefit, anniversaryDateStr?: string):
   return Math.max(0, differenceInDays(end, now));
 };
 
-export const getStatusColor = (days: number): string => {
+export const getStatusColor = (days: number, isFullyUsed?: boolean): string => {
+  if (isFullyUsed) return STATUS_COLORS.DANGER;
   if (days <= 7) return STATUS_COLORS.DANGER;
   if (days <= 14) return STATUS_COLORS.WARNING;
   return STATUS_COLORS.SUCCESS;

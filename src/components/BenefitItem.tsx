@@ -6,7 +6,7 @@ import { getDisplayBenefitName } from '../utils/stringUtils';
 import { formatBenefitValue, getFrequencyLabel } from '../utils/formatUtils';
 import { calculateBenefitMetrics } from '../utils/benefitMetrics';
 import { MinimalButton } from './MinimalButton';
-import { STATUS_COLORS } from '../constants';
+import { STATUS_COLORS, BENEFIT_CONFIGS } from '../constants';
 
 interface BenefitItemProps {
   benefit: Benefit;
@@ -33,15 +33,20 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
 
   // Calculate current period metrics using centralized utility
   const metrics = calculateBenefitMetrics(benefit, anniversaryDate);
-  const { percent, remainingPercent, remaining } = metrics;
+  const { currentUsedAmount, remaining, remainingPercent, percent } = metrics;
 
   const isMonetary = !benefit.unit || benefit.unit === '$';
   const displayName = getDisplayBenefitName(benefit.name);
+  const config = BENEFIT_CONFIGS[displayName];
 
   const handleAdd = () => {
     const amount = parseFloat(quickAmount);
     if (!isNaN(amount) && amount > 0) {
-      onAddUsage(benefit.id, amount, description || 'Manual entry', new Date(usageDate).toISOString());
+      // Parse the local date string (YYYY-MM-DD) correctly to avoid UTC timezone shifts
+      const [year, month, day] = usageDate.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day, 12, 0, 0); // Set to noon local time
+      
+      onAddUsage(benefit.id, amount, description || 'Manual entry', localDate.toISOString());
       setQuickAmount('');
       setDescription('');
       setUsageDate(new Date().toISOString().split('T')[0]);
@@ -50,7 +55,7 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
   };
 
   const subHeaderParts = [
-    formatBenefitValue(benefit.totalAmount, benefit.unit),
+    config?.hideTotalInSubheader ? null : formatBenefitValue(benefit.totalAmount, benefit.unit),
     getFrequencyLabel(benefit.frequency),
     benefit.category?.toLowerCase()
   ].filter(Boolean);
@@ -71,7 +76,7 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
           className="progress-bar" 
           style={{ 
             width: `${percent}%`, 
-            background: getStatusColor(metrics.daysLeft)
+            background: getStatusColor(metrics.daysLeft, metrics.isFullyUsed)
           }} 
         />
       </div>
@@ -150,7 +155,9 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
           )}
         </div>
         <div style={{ fontSize: '0.75rem', textAlign: 'right', color: remainingPercent < 10 ? STATUS_COLORS.DANGER : STATUS_COLORS.MUTED, fontWeight: '500' }}>
-          {remaining > 0 ? `${formatBenefitValue(remaining, benefit.unit)} remaining` : 'Fully used!'}
+          {config?.displayMode === 'spent' 
+            ? `${formatBenefitValue(currentUsedAmount, benefit.unit)} spent`
+            : (remaining > 0 ? `${formatBenefitValue(remaining, benefit.unit)} remaining` : 'Fully used!')}
         </div>
       </div>
 
@@ -163,7 +170,7 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
               <div key={usage.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', padding: '4px 0', borderBottom: '1px solid #f1f5f9' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '500' }}>{formatBenefitValue(usage.amount, benefit.unit)} - {usage.description}</div>
-                  <div style={{ color: STATUS_COLORS.MUTED, fontSize: '0.65rem' }}>{new Date(usage.date).toLocaleDateString()}</div>
+                  <div style={{ color: STATUS_COLORS.MUTED, fontSize: '0.65rem' }}>{new Date(usage.date).toLocaleDateString(undefined, { timeZone: 'UTC' })}</div>
                 </div>
                 <MinimalButton onClick={() => onDeleteUsage(benefit.id, usage.id)} color={STATUS_COLORS.DANGER} title="Delete Entry">
                   <Trash2 size={12} />

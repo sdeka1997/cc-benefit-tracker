@@ -4,7 +4,7 @@ import { getDisplayCardName } from './stringUtils';
 import { EXPIRY_GROUPS, EXPIRY_ORDER } from '../constants';
 
 export interface GroupedBenefits {
-  [key: string]: (Benefit & { cardName: string; cardId: string; anniversaryDate: string })[];
+  [key: string]: (Benefit & { cardName: string; cardId: string; anniversaryDate: string; isAnniversarySet?: boolean })[];
 }
 
 /**
@@ -15,12 +15,15 @@ const sortBenefitsByName = (a: Benefit, b: Benefit) => {
 };
 
 export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
-  const allBenefits = cards.flatMap(card => card.benefits.map(b => ({ 
-    ...b, 
-    cardName: getDisplayCardName(card.name, card.issuer), 
-    cardId: card.id, 
-    anniversaryDate: card.anniversaryDate 
-  })));
+  const allBenefits = cards.flatMap(card => card.benefits
+    .filter(b => !b.isHidden)
+    .map(b => ({ 
+      ...b, 
+      cardName: getDisplayCardName(card.name, card.issuer), 
+      cardId: card.id, 
+      anniversaryDate: card.anniversaryDate,
+      isAnniversarySet: card.isAnniversarySet
+    })));
   
   const groups = allBenefits.reduce((acc, b) => {
     const { daysLeft, isFullyUsed } = calculateBenefitMetrics(b, b.anniversaryDate);
@@ -58,12 +61,15 @@ export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
 };
 
 export const groupBenefitsByCategory = (cards: CreditCard[]): GroupedBenefits => {
-  const allBenefits = cards.flatMap(card => card.benefits.map(b => ({ 
-    ...b, 
-    cardName: getDisplayCardName(card.name, card.issuer), 
-    cardId: card.id, 
-    anniversaryDate: card.anniversaryDate 
-  })));
+  const allBenefits = cards.flatMap(card => card.benefits
+    .filter(b => !b.isHidden)
+    .map(b => ({ 
+      ...b, 
+      cardName: getDisplayCardName(card.name, card.issuer), 
+      cardId: card.id, 
+      anniversaryDate: card.anniversaryDate,
+      isAnniversarySet: card.isAnniversarySet
+    })));
 
   const groups = allBenefits.reduce((acc, b) => {
     const cat = b.category || 'Other';
@@ -95,12 +101,19 @@ export const groupBenefitsByCard = (cards: CreditCard[]): GroupedBenefits => {
     const groupKey = `${card.id}|${displayName}`;
     
     // Sort benefits within this card alphabetically by name
-    acc[groupKey] = card.benefits.map(b => ({ 
-      ...b, 
-      cardName: displayName, 
-      cardId: card.id, 
-      anniversaryDate: card.anniversaryDate 
-    })).sort(sortBenefitsByName);
+    const activeBenefits = card.benefits
+      .filter(b => !b.isHidden)
+      .map(b => ({ 
+        ...b, 
+        cardName: displayName, 
+        cardId: card.id, 
+        anniversaryDate: card.anniversaryDate,
+        isAnniversarySet: card.isAnniversarySet
+      })).sort(sortBenefitsByName);
+      
+    if (activeBenefits.length > 0) {
+      acc[groupKey] = activeBenefits;
+    }
     
     return acc;
   }, {} as GroupedBenefits);

@@ -1,8 +1,9 @@
 import React from 'react';
 import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { addDays } from 'date-fns';
 import { BenefitItem } from './BenefitItem';
 import { getStatusColor } from '../utils/dateUtils';
-import { calculateBenefitMetrics } from '../utils/benefitMetrics';
+import { calculateBenefitMetrics, needsAnniversaryDate } from '../utils/benefitMetrics';
 import type { GroupedBenefits } from '../utils/groupingUtils';
 
 interface BenefitGroupProps {
@@ -65,7 +66,8 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
           {benefits.map(b => {
             const { daysLeft, isFullyUsed, expiryDate } = calculateBenefitMetrics(b, b.anniversaryDate);
             const hasHeader = !hideCardLabel || isByExpiry;
-            const needsInfo = b.frequency === 'anniversary' && !b.issueDate;
+            const needsInfo = needsAnniversaryDate(b) && !b.isAnniversarySet;
+            const resetDate = addDays(expiryDate, 1);
             
             return (
               <div key={b.id} className="card" style={{ padding: '1rem', opacity: isFullyUsed ? 0.7 : 1 }}>
@@ -74,11 +76,11 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {!hideCardLabel ? b.cardName : ''}
                     </div>
-                    {isByExpiry && !needsInfo && (
+                    {!needsInfo && (
                       <span 
                         className="badge" 
                         style={{ 
-                          color: isFullyUsed ? 'var(--text-muted)' : getStatusColor(daysLeft), 
+                          color: isFullyUsed ? 'var(--text-muted)' : getStatusColor(daysLeft, isFullyUsed), 
                           display: 'flex', 
                           alignItems: 'center', 
                           gap: '4px', 
@@ -92,11 +94,11 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
                         <Clock size={10} />
                         {b.frequency === 'interval' 
                           ? (isFullyUsed 
-                              ? `Available on ${expiryDate.toLocaleDateString()}` 
+                              ? `Available on ${resetDate.toLocaleDateString()}` 
                               : 'Available now')
                           : (showGlobalExpiryDate || isFullyUsed) 
                             ? (isFullyUsed 
-                                ? `Resets ${expiryDate.toLocaleDateString()}`
+                                ? `Resets ${resetDate.toLocaleDateString()}`
                                 : expiryDate.toLocaleDateString())
                             : `${daysLeft}d left`
                         }

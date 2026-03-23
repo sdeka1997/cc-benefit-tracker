@@ -11,6 +11,10 @@ export interface BenefitMetrics {
   expiryDate: Date;
 }
 
+export const needsAnniversaryDate = (benefit: Benefit): boolean => {
+  return benefit.frequency === 'anniversary';
+};
+
 export const calculateBenefitMetrics = (benefit: Benefit, anniversaryDate?: string): BenefitMetrics => {
   const currentUsedAmount = calculateCurrentUsedAmount(benefit, anniversaryDate);
   const remaining = Math.max(0, benefit.totalAmount - currentUsedAmount);
