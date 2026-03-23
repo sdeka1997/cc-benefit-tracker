@@ -1,22 +1,26 @@
-import { useLocalStorage } from './useLocalStorage';
+import { useState, useMemo } from 'react';
 import type { CreditCard, Benefit, BenefitUsage, ResetFrequency, PeriodType } from '../types/index';
 import { normalizeCard } from '../utils/migrationUtils';
 import { getDisplayBenefitName } from '../utils/stringUtils';
 
 export const useCreditCards = () => {
-  const [storedCards, setStoredCards] = useLocalStorage<CreditCard[]>('cc-benefits', []);
+  const [storedCards, setStoredCards] = useState<CreditCard[]>([]);
   
-  // Normalize data on every load
-  const cards = storedCards.map(normalizeCard);
+  // Normalize data only when storedCards changes to prevent infinite loops
+  const cards = useMemo(() => storedCards.map(normalizeCard), [storedCards]);
+
+  const setCards = (newCards: CreditCard[]) => {
+    setStoredCards(newCards);
+  };
 
   const deleteCard = (cardId: string) => {
     if (confirm('Are you sure you want to delete this card and all its benefits?')) {
-      setStoredCards(storedCards.filter(c => c.id !== cardId));
+      setStoredCards(prev => prev.filter(c => c.id !== cardId));
     }
   };
 
   const updateAnniversary = (cardId: string, newDate: string) => {
-    setStoredCards(storedCards.map(card => {
+    setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
         return { ...card, anniversaryDate: new Date(newDate).toISOString(), isAnniversarySet: true };
       }
@@ -24,10 +28,10 @@ export const useCreditCards = () => {
     }));
   };
 
-  const deleteAnniversary = (cardId: string) => {
-    setStoredCards(storedCards.map(card => {
+  const handleDeleteAnniversary = (cardId: string) => {
+    setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
-        return { ...card, isAnniversarySet: false };
+        return { ...card, anniversaryDate: '', isAnniversarySet: false };
       }
       return card;
     }));
@@ -38,7 +42,7 @@ export const useCreditCards = () => {
   };
 
   const addUsage = (cardId: string, benefitId: string, amount: number, description: string, date: string) => {
-    setStoredCards(storedCards.map(card => {
+    setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
         return {
           ...card,
@@ -64,8 +68,25 @@ export const useCreditCards = () => {
     }));
   };
 
+  const updateBenefit = (cardId: string, benefitId: string, updates: Partial<Benefit>) => {
+    setStoredCards(prev => prev.map(card => {
+      if (card.id === cardId) {
+        return {
+          ...card,
+          benefits: card.benefits.map(benefit => {
+            if (benefit.id === benefitId) {
+              return { ...benefit, ...updates };
+            }
+            return benefit;
+          })
+        };
+      }
+      return card;
+    }));
+  };
+
   const deleteUsage = (cardId: string, benefitId: string, usageId: string) => {
-    setStoredCards(storedCards.map(card => {
+    setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
         return {
           ...card,
@@ -96,7 +117,7 @@ export const useCreditCards = () => {
     resetIntervalMonths?: number, 
     issueDate?: string
   ) => {
-    setStoredCards(storedCards.map(card => {
+    setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
         const newBenefit: Benefit = {
           id: crypto.randomUUID(),
@@ -110,7 +131,8 @@ export const useCreditCards = () => {
           lastResetDate: new Date().toISOString(),
           resetIntervalMonths,
           issueDate: issueDate ? new Date(issueDate).toISOString() : undefined,
-          unit: '$'
+          unit: '$',
+          isCustom: true
         };
         return { ...card, benefits: [...card.benefits, newBenefit] };
       }
@@ -120,11 +142,15 @@ export const useCreditCards = () => {
 
   return {
     cards,
+    storedCards,
+    setCards,
+    setStoredCards,
     deleteCard,
     updateAnniversary,
-    deleteAnniversary,
+    deleteAnniversary: handleDeleteAnniversary,
     syncCards,
     addUsage,
+    updateBenefit,
     deleteUsage,
     addBenefit
   };
