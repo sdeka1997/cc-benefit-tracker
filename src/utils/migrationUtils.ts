@@ -51,6 +51,7 @@ export const normalizeBenefit = (b: Benefit, cardIssuer: string): Benefit => {
 export const normalizeCard = (card: CreditCard): CreditCard => {
   return {
     ...card,
+    isAnniversarySet: card.isAnniversarySet ?? true, // Assume existing cards had it set or don't need the glow
     benefits: card.benefits.map(b => normalizeBenefit(b, card.issuer))
   };
 };

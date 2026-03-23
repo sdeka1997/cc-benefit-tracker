@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Trash2, ChevronDown, ChevronUp, History, Plus, X as CloseIcon, Check } from 'lucide-react';
 import type { Benefit } from '../types/index';
-import { calculateCurrentUsedAmount } from '../utils/dateUtils';
+import { getStatusColor } from '../utils/dateUtils';
 import { getDisplayBenefitName } from '../utils/stringUtils';
 import { formatBenefitValue, getFrequencyLabel } from '../utils/formatUtils';
+import { calculateBenefitMetrics } from '../utils/benefitMetrics';
+import { MinimalButton } from './MinimalButton';
 import { STATUS_COLORS } from '../constants';
 
 interface BenefitItemProps {
@@ -29,20 +31,12 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
   const [showHistory, setShowHistory] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // Calculate current period metrics
-  const currentUsedAmount = calculateCurrentUsedAmount(benefit, anniversaryDate);
-  const remaining = benefit.totalAmount - currentUsedAmount;
-  const remainingPercent = (remaining / benefit.totalAmount) * 100;
-  const percent = Math.min(100, (currentUsedAmount / benefit.totalAmount) * 100);
+  // Calculate current period metrics using centralized utility
+  const metrics = calculateBenefitMetrics(benefit, anniversaryDate);
+  const { percent, remainingPercent, remaining } = metrics;
 
   const isMonetary = !benefit.unit || benefit.unit === '$';
   const displayName = getDisplayBenefitName(benefit.name);
-
-  const getStatusColor = () => {
-    if (remainingPercent < 10) return 'var(--status-red)';
-    if (remainingPercent < 40) return 'var(--status-yellow)';
-    return 'var(--status-green)';
-  };
 
   const handleAdd = () => {
     const amount = parseFloat(quickAmount);
@@ -77,7 +71,7 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
           className="progress-bar" 
           style={{ 
             width: `${percent}%`, 
-            background: getStatusColor()
+            background: getStatusColor(metrics.daysLeft)
           }} 
         />
       </div>
@@ -104,20 +98,12 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
             onChange={(e) => setDescription(e.target.value)}
             style={{ flex: 1, padding: '4px 6px', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}
           />
-          <button 
-            onClick={handleAdd} 
-            style={{ background: 'none', border: 'none', color: STATUS_COLORS.SUCCESS, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-            title="Confirm"
-          >
+          <MinimalButton onClick={handleAdd} color={STATUS_COLORS.SUCCESS} title="Confirm">
             <Check size={16} />
-          </button>
-          <button 
-            onClick={() => setShowAddForm(false)} 
-            style={{ background: 'none', border: 'none', color: STATUS_COLORS.MUTED, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-            title="Cancel"
-          >
+          </MinimalButton>
+          <MinimalButton onClick={() => setShowAddForm(false)} color={STATUS_COLORS.MUTED} title="Cancel">
             <CloseIcon size={16} />
-          </button>
+          </MinimalButton>
         </div>
       )}
       
@@ -179,12 +165,9 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
                   <div style={{ fontWeight: '500' }}>{formatBenefitValue(usage.amount, benefit.unit)} - {usage.description}</div>
                   <div style={{ color: STATUS_COLORS.MUTED, fontSize: '0.65rem' }}>{new Date(usage.date).toLocaleDateString()}</div>
                 </div>
-                <button 
-                  onClick={() => onDeleteUsage(benefit.id, usage.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: STATUS_COLORS.DANGER, padding: '2px' }}
-                >
+                <MinimalButton onClick={() => onDeleteUsage(benefit.id, usage.id)} color={STATUS_COLORS.DANGER} title="Delete Entry">
                   <Trash2 size={12} />
-                </button>
+                </MinimalButton>
               </div>
             ))
           )}

@@ -1,7 +1,8 @@
 import React from 'react';
 import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { BenefitItem } from './BenefitItem';
-import { getStatusColor, getPeriodEndDate, calculateCurrentUsedAmount, getDaysRemaining } from '../utils/dateUtils';
+import { getStatusColor } from '../utils/dateUtils';
+import { calculateBenefitMetrics } from '../utils/benefitMetrics';
 import type { GroupedBenefits } from '../utils/groupingUtils';
 
 interface BenefitGroupProps {
@@ -34,14 +35,14 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
 
   let groupRemaining = 0;
   benefits.forEach(b => {
+    const { remaining } = calculateBenefitMetrics(b, b.anniversaryDate);
     const isMonetary = !b.unit || b.unit === '$';
     if (isMonetary) {
-      groupRemaining += (b.totalAmount - calculateCurrentUsedAmount(b, b.anniversaryDate));
+      groupRemaining += remaining;
     }
   });
 
   const getHeaderStatusColor = () => {
-    // This could be further refined, but keeping existing logic for now
     return 'var(--status-green)'; 
   };
 
@@ -62,8 +63,7 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
       {!isCollapsed && (
         <div className="card-grid">
           {benefits.map(b => {
-            const daysLeft = getDaysRemaining(b, b.anniversaryDate);
-            const isFullyUsed = (b.totalAmount - calculateCurrentUsedAmount(b, b.anniversaryDate)) <= 0;
+            const { daysLeft, isFullyUsed, expiryDate } = calculateBenefitMetrics(b, b.anniversaryDate);
             const hasHeader = !hideCardLabel || isByExpiry;
             const needsInfo = b.frequency === 'anniversary' && !b.issueDate;
             
@@ -92,12 +92,12 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
                         <Clock size={10} />
                         {b.frequency === 'interval' 
                           ? (isFullyUsed 
-                              ? `Available on ${getPeriodEndDate(b, b.anniversaryDate).toLocaleDateString()}` 
+                              ? `Available on ${expiryDate.toLocaleDateString()}` 
                               : 'Available now')
                           : (showGlobalExpiryDate || isFullyUsed) 
                             ? (isFullyUsed 
-                                ? `Resets ${getPeriodEndDate(b, b.anniversaryDate).toLocaleDateString()}`
-                                : getPeriodEndDate(b, b.anniversaryDate).toLocaleDateString())
+                                ? `Resets ${expiryDate.toLocaleDateString()}`
+                                : expiryDate.toLocaleDateString())
                             : `${daysLeft}d left`
                         }
                       </span>

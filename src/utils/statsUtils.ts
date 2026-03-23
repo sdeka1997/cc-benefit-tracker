@@ -1,5 +1,5 @@
 import type { CreditCard } from '../types/index';
-import { calculateCurrentUsedAmount, getDaysRemaining } from './dateUtils';
+import { calculateBenefitMetrics } from './benefitMetrics';
 
 export interface DashboardStats {
   lifetimeSavings: number;
@@ -17,8 +17,8 @@ export const calculateDashboardStats = (cards: CreditCard[]): DashboardStats => 
     acc + card.benefits.reduce((bAcc, b) => {
       const isMonetary = !b.unit || b.unit === '$';
       if (!isMonetary) return bAcc;
-      const remaining = b.totalAmount - calculateCurrentUsedAmount(b, card.anniversaryDate);
-      return bAcc + Math.max(0, remaining);
+      const { remaining } = calculateBenefitMetrics(b, card.anniversaryDate);
+      return bAcc + remaining;
     }, 0), 0
   );
 
@@ -28,10 +28,10 @@ export const calculateDashboardStats = (cards: CreditCard[]): DashboardStats => 
   })));
 
   const nextExpiryBenefit = allBenefits
-    .filter(b => (b.totalAmount - calculateCurrentUsedAmount(b, b.anniversaryDate)) > 0)
-    .sort((a, b) => getDaysRemaining(a, a.anniversaryDate) - getDaysRemaining(b, b.anniversaryDate))[0];
+    .filter(b => calculateBenefitMetrics(b, b.anniversaryDate).remaining > 0)
+    .sort((a, b) => calculateBenefitMetrics(a, a.anniversaryDate).daysLeft - calculateBenefitMetrics(b, b.anniversaryDate).daysLeft)[0];
 
-  const nextExpiryDays = nextExpiryBenefit ? getDaysRemaining(nextExpiryBenefit, nextExpiryBenefit.anniversaryDate) : null;
+  const nextExpiryDays = nextExpiryBenefit ? calculateBenefitMetrics(nextExpiryBenefit, nextExpiryBenefit.anniversaryDate).daysLeft : null;
 
   return {
     lifetimeSavings,

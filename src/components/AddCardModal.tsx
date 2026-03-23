@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Search, Check } from 'lucide-react';
 import type { CreditCard } from '../types/index';
 import { PREPOPULATED_CARDS } from '../data/prepopulatedCards';
+import { getDisplayCardName } from '../utils/stringUtils';
 import { FLAGS } from '../config';
 
 interface AddCardModalProps {
@@ -10,22 +11,12 @@ interface AddCardModalProps {
   onSync: (updatedCards: CreditCard[]) => void;
 }
 
-// Helper to clean card names for display
-const getDisplayCardName = (cardName: string, issuer: string) => {
-  return cardName
-    .replace(new RegExp(`^${issuer}\\s+`, 'i'), '')
-    .replace(/\s*\(.*\)$/, '');
-};
-
 export const AddCardModal: React.FC<AddCardModalProps> = ({ onClose, currentCards, onSync }) => {
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Track selected template IDs. 
-  // Initial state is derived from currentCards' templateId or name matching.
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<Set<string>>(() => {
     const ids = new Set<string>();
     currentCards.forEach(c => {
-      // Find template match
       const template = PREPOPULATED_CARDS.find(p => p.id === c.templateId || p.name === c.name);
       if (template) ids.add(template.id);
     });
@@ -38,7 +29,7 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ onClose, currentCard
   );
 
   const toggleCard = (card: CreditCard) => {
-    const id = card.id; // Prepopulated cards use their fixed ID
+    const id = card.id;
     const newSelected = new Set(selectedTemplateIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -51,7 +42,6 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ onClose, currentCard
   const handleSave = () => {
     const updatedCards: CreditCard[] = [];
 
-    // 1. Keep existing cards that are still selected
     currentCards.forEach(card => {
       const template = PREPOPULATED_CARDS.find(p => p.id === card.templateId || p.name === card.name);
       if (template && selectedTemplateIds.has(template.id)) {
@@ -59,7 +49,6 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ onClose, currentCard
       }
     });
 
-    // 2. Add new cards from templates that aren't already in updatedCards
     selectedTemplateIds.forEach(tid => {
       const alreadyExists = updatedCards.some(c => c.templateId === tid || c.name === PREPOPULATED_CARDS.find(p => p.id === tid)?.name);
       if (!alreadyExists) {
@@ -70,6 +59,7 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ onClose, currentCard
             id: crypto.randomUUID(),
             templateId: template.id,
             anniversaryDate: new Date().toISOString(),
+            isAnniversarySet: false, // New cards need their anniversary set
             benefits: template.benefits.map(b => ({ ...b, id: crypto.randomUUID() }))
           });
         }

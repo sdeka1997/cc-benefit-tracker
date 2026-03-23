@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Plus, Trash, Calendar, Check, X as CloseIcon } from 'lucide-react';
 import type { CreditCard, ResetFrequency, PeriodType } from '../types/index';
 import { getDisplayCardName } from '../utils/stringUtils';
+import { MinimalButton } from './MinimalButton';
 import { FLAGS } from '../config';
+import { STATUS_COLORS } from '../constants';
 
 interface ProfileViewProps {
   cards: CreditCard[];
@@ -65,47 +67,47 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                               style={{ height: '24px', padding: '0 4px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', outline: 'none' }}
                               autoFocus={editingAnniversaryFor === card.id}
                             />
-                            <button 
+                            <MinimalButton 
                               onClick={() => {
                                 onUpdateAnniversary(card.id, tempAnniversary || card.anniversaryDate.split('T')[0]);
                                 setEditingAnniversaryFor(null);
                                 setNewTempAnniversary('');
                               }}
-                              style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                              color={STATUS_COLORS.SUCCESS}
                               title="Save"
                             >
                               <Check size={16} />
-                            </button>
+                            </MinimalButton>
                             {card.isAnniversarySet && (
-                              <button 
+                              <MinimalButton 
                                 onClick={() => {
                                   onDeleteAnniversary(card.id);
                                   setEditingAnniversaryFor(null);
                                   setNewTempAnniversary('');
                                 }}
-                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                                color={STATUS_COLORS.MUTED}
                                 title="Delete Anniversary Date"
                               >
                                 <CloseIcon size={16} />
-                              </button>
+                              </MinimalButton>
                             )}
                           </div>
                         ) : (
-                          <button 
+                          <MinimalButton 
                             onClick={() => {
                               setEditingAnniversaryFor(card.id);
                               setNewTempAnniversary(card.anniversaryDate.split('T')[0]);
                             }}
-                            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', padding: '2px' }}
+                            color="var(--primary)"
                             title={`Anniversary: ${new Date(card.anniversaryDate).toLocaleDateString()}`}
                           >
                             <Calendar size={16} />
-                          </button>
+                          </MinimalButton>
                         )}
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => onDeleteCard(card.id)} className="btn-outline" style={{ color: 'var(--danger)', padding: '6px' }}>
+                  <button onClick={() => onDeleteCard(card.id)} className="btn-outline" style={{ color: STATUS_COLORS.DANGER, padding: '6px', cursor: 'pointer' }}>
                     <Trash size={18} />
                   </button>
                 </div>

@@ -1,5 +1,5 @@
 import type { CreditCard, Benefit } from '../types/index';
-import { getDaysRemaining, calculateCurrentUsedAmount } from './dateUtils';
+import { calculateBenefitMetrics } from './benefitMetrics';
 import { getDisplayCardName } from './stringUtils';
 import { EXPIRY_GROUPS, EXPIRY_ORDER } from '../constants';
 
@@ -16,14 +16,13 @@ export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
   })));
   
   const groups = allBenefits.reduce((acc, b) => {
-    const days = getDaysRemaining(b, b.anniversaryDate);
-    const isUsed = (b.totalAmount - calculateCurrentUsedAmount(b, b.anniversaryDate)) <= 0;
+    const { daysLeft, isFullyUsed } = calculateBenefitMetrics(b, b.anniversaryDate);
     
     let group: string = EXPIRY_GROUPS.LATER;
-    if (isUsed) group = EXPIRY_GROUPS.FULLY_USED;
-    else if (days <= 7) group = EXPIRY_GROUPS.SOON;
-    else if (days <= 30) group = EXPIRY_GROUPS.MONTH;
-    else if (days <= 90) group = EXPIRY_GROUPS.QUARTER;
+    if (isFullyUsed) group = EXPIRY_GROUPS.FULLY_USED;
+    else if (daysLeft <= 7) group = EXPIRY_GROUPS.SOON;
+    else if (daysLeft <= 30) group = EXPIRY_GROUPS.MONTH;
+    else if (daysLeft <= 90) group = EXPIRY_GROUPS.QUARTER;
     
     if (!acc[group]) acc[group] = [];
     acc[group].push(b);
