@@ -4,7 +4,7 @@ import { getDisplayCardName } from './stringUtils';
 import { EXPIRY_GROUPS, EXPIRY_ORDER } from '../constants';
 
 export interface GroupedBenefits {
-  [key: string]: (Benefit & { cardName: string; cardId: string; anniversaryDate: string; isAnniversarySet?: boolean })[];
+  [key: string]: (Benefit & { cardName: string; cardId: string; annualFeeDate: string })[];
 }
 
 /**
@@ -21,12 +21,11 @@ export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
       ...b, 
       cardName: getDisplayCardName(card.name, card.issuer), 
       cardId: card.id, 
-      anniversaryDate: card.anniversaryDate,
-      isAnniversarySet: card.isAnniversarySet
+      annualFeeDate: card.annualFeeDate
     })));
   
   const groups = allBenefits.reduce((acc, b) => {
-    const { daysLeft, isFullyUsed } = calculateBenefitMetrics(b, b.anniversaryDate);
+    const { daysLeft, isFullyUsed } = calculateBenefitMetrics(b, b.annualFeeDate);
     
     let group: string = EXPIRY_GROUPS.LATER;
     if (isFullyUsed) group = EXPIRY_GROUPS.FULLY_USED;
@@ -44,8 +43,8 @@ export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
   EXPIRY_ORDER.forEach(key => {
     if (groups[key]) {
       orderedGroups[key] = groups[key].sort((a, b) => {
-        const metricsA = calculateBenefitMetrics(a, a.anniversaryDate);
-        const metricsB = calculateBenefitMetrics(b, b.anniversaryDate);
+        const metricsA = calculateBenefitMetrics(a, a.annualFeeDate);
+        const metricsB = calculateBenefitMetrics(b, b.annualFeeDate);
         
         // Primary sort: Days Remaining
         const daysDiff = metricsA.daysLeft - metricsB.daysLeft;
@@ -67,8 +66,7 @@ export const groupBenefitsByCategory = (cards: CreditCard[]): GroupedBenefits =>
       ...b, 
       cardName: getDisplayCardName(card.name, card.issuer), 
       cardId: card.id, 
-      anniversaryDate: card.anniversaryDate,
-      isAnniversarySet: card.isAnniversarySet
+      annualFeeDate: card.annualFeeDate
     })));
 
   const groups = allBenefits.reduce((acc, b) => {
@@ -107,8 +105,7 @@ export const groupBenefitsByCard = (cards: CreditCard[]): GroupedBenefits => {
         ...b, 
         cardName: displayName, 
         cardId: card.id, 
-        anniversaryDate: card.anniversaryDate,
-        isAnniversarySet: card.isAnniversarySet
+        annualFeeDate: card.annualFeeDate
       })).sort(sortBenefitsByName);
       
     if (activeBenefits.length > 0) {

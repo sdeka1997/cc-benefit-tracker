@@ -4,7 +4,6 @@ import {
   isAfter,
   addYears,
   addMonths,
-  addDays,
   setYear,
   isBefore,
   parseISO,
@@ -13,21 +12,33 @@ import {
   startOfYear,
   subYears,
   addQuarters,
-  subMonths,
-  subDays
+  subDays,
+  startOfDay,
+  endOfDay
 } from 'date-fns';
 import type { Benefit } from '../types/index';
 import { STATUS_COLORS, DEFAULT_INTERVALS } from '../constants';
 
 export { parseISO, isAfter };
 
-export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string): Date => {
+export const getPeriodStartDate = (benefit: Benefit, cardAnnualFeeDateStr?: string): Date => {
   const now = new Date();
   const frequency = benefit.frequency.toLowerCase();
-  const isRolling = frequency === 'anniversary' || frequency === 'interval';
 
   if (frequency === 'anniversary') {
-    const baseDate = anniversaryDateStr && anniversaryDateStr !== '' ? parseISO(anniversaryDateStr) : now;
+    let baseDate: Date;
+    // Prioritize benefit-specific expiration date if set
+    if (benefit.expirationDate && benefit.expirationDate !== '') {
+      const parsed = parseISO(benefit.expirationDate);
+      baseDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 12, 0, 0);
+    } else if (cardAnnualFeeDateStr && cardAnnualFeeDateStr !== '') {
+      // Fallback to card's annual fee date if benefit specific expiration is not set
+      const parsed = parseISO(cardAnnualFeeDateStr);
+      baseDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 12, 0, 0);
+    } else {
+      baseDate = now;
+    }
+    
     let date = setYear(baseDate, now.getFullYear());
     if (isAfter(date, now)) date = subYears(date, 1);
     
@@ -54,42 +65,6 @@ export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string
     return new Date(0);
   }
 
-  if (isRolling && anniversaryDateStr && anniversaryDateStr !== '') {
-    const anniv = parseISO(anniversaryDateStr);
-    
-    switch (frequency) {
-      case 'monthly': {
-        let date = setYear(anniv, now.getFullYear());
-        date = addMonths(date, now.getMonth() - anniv.getMonth());
-        if (isAfter(date, now)) date = subMonths(date, 1);
-        return date;
-      }
-      case 'quarterly': {
-        let date = setYear(anniv, now.getFullYear());
-        // Find which quarter we are in relative to anniversary
-        while (isAfter(date, now)) date = addQuarters(date, -1);
-        while (isBefore(addQuarters(date, 1), now) || addQuarters(date, 1).getTime() === now.getTime()) {
-          date = addQuarters(date, 1);
-        }
-        return date;
-      }
-      case 'semi_annually':
-      case 'semi annually': {
-        let date = setYear(anniv, now.getFullYear());
-        while (isAfter(date, now)) date = addMonths(date, -6);
-        while (isBefore(addMonths(date, 6), now) || addMonths(date, 6).getTime() === now.getTime()) {
-          date = addMonths(date, 6);
-        }
-        return date;
-      }
-      case 'annually': {
-        let date = setYear(anniv, now.getFullYear());
-        if (isAfter(date, now)) date = subYears(date, 1);
-        return date;
-      }
-    }
-  }
-
   // Calendar logic (default)
   switch (frequency) {
     case 'monthly':
@@ -107,8 +82,8 @@ export const getPeriodStartDate = (benefit: Benefit, anniversaryDateStr?: string
   }
 };
 
-export const calculateCurrentUsedAmount = (benefit: Benefit, anniversaryDateStr?: string): number => {
-  const periodStart = getPeriodStartDate(benefit, anniversaryDateStr);
+export const calculateCurrentUsedAmount = (benefit: Benefit, cardAnnualFeeDateStr?: string): number => {
+  const periodStart = getPeriodStartDate(benefit, cardAnnualFeeDateStr);
   const currentPeriodUsages = benefit.usages.filter(u => {
     const usageDate = parseISO(u.date);
     return isAfter(usageDate, periodStart) || usageDate.getTime() === periodStart.getTime();
@@ -116,8 +91,8 @@ export const calculateCurrentUsedAmount = (benefit: Benefit, anniversaryDateStr?
   return currentPeriodUsages.reduce((sum, u) => sum + u.amount, 0);
 };
 
-export const getPeriodEndDate = (benefit: Benefit, anniversaryDateStr?: string): Date => {
-  const startDate = getPeriodStartDate(benefit, anniversaryDateStr);
+export const getPeriodEndDate = (benefit: Benefit, cardAnnualFeeDateStr?: string): Date => {
+  const startDate = getPeriodStartDate(benefit, cardAnnualFeeDateStr);
   const frequency = benefit.frequency.toLowerCase();
   const now = new Date();
   
@@ -149,10 +124,12 @@ export const getPeriodEndDate = (benefit: Benefit, anniversaryDateStr?: string):
   }
 };
 
-export const getDaysRemaining = (benefit: Benefit, anniversaryDateStr?: string): number => {
+export const getDaysRemaining = (benefit: Benefit, cardAnnualFeeDateStr?: string): number => {
   const now = new Date();
-  const end = getPeriodEndDate(benefit, anniversaryDateStr);
-  return Math.max(0, differenceInDays(end, now));
+  const end = getPeriodEndDate(benefit, cardAnnualFeeDateStr);
+  // Compare the end of the expiration day with the start of today.
+  // This ensures that if today is the expiration day, the user has until 11:59:59 PM to use it.
+  return Math.max(0, differenceInDays(endOfDay(end), startOfDay(now)));
 };
 
 export const getStatusColor = (days: number, isFullyUsed?: boolean): string => {

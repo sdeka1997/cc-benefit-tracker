@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { CreditCard as CardIcon, ShieldCheck, RefreshCw, LogOut } from 'lucide-react';
 import { BenefitGroup } from './components/BenefitGroup';
 import { HeaderStats } from './components/HeaderStats';
@@ -19,7 +19,7 @@ function App() {
     storedCards,
     setStoredCards,
     deleteCard, 
-    updateAnniversary, 
+    updateAnnualFeeDate, 
     deleteAnniversary, 
     syncCards, 
     addUsage, 
@@ -31,8 +31,19 @@ function App() {
   const { user, settings, syncStatus, loginWithGoogle, logout, updateSettings } = useCloudSync(storedCards, setStoredCards);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>(TABS.EXPIRING);
+  
+  // Initialize tab from hash if present
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const hash = window.location.hash.replace('#', '') as TabType;
+    return Object.values(TABS).some(v => v === hash) ? hash : TABS.EXPIRING;
+  });
+
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  // Update hash when tab changes
+  useEffect(() => {
+    window.location.hash = activeTab;
+  }, [activeTab]);
 
   const toggleGroup = (group: string) => {
     setCollapsedGroups(prev => ({ ...prev, [group]: !prev[group] }));
@@ -91,7 +102,7 @@ function App() {
         <ProfileView 
           cards={cards}
           onDeleteCard={deleteCard}
-          onUpdateAnniversary={updateAnniversary}
+          onUpdateAnnualFeeDate={updateAnnualFeeDate}
           onDeleteAnniversary={deleteAnniversary}
           onAddBenefit={addBenefit}
           onUpdateBenefit={updateBenefit}
@@ -121,6 +132,7 @@ function App() {
         hideCardLabel={false}
         onAddUsage={addUsage}
         onDeleteUsage={deleteUsage}
+        onUpdateBenefit={updateBenefit}
       />
     ));
   };

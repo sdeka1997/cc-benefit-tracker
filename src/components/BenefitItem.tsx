@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Trash2, ChevronDown, ChevronUp, History, Plus, X as CloseIcon, Check } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, History, Plus, X as CloseIcon, Check, Calendar, AlertCircle } from 'lucide-react';
 import type { Benefit } from '../types/index';
 import { getStatusColor } from '../utils/dateUtils';
 import { getDisplayBenefitName } from '../utils/stringUtils';
 import { formatBenefitValue, getFrequencyLabel } from '../utils/formatUtils';
-import { calculateBenefitMetrics } from '../utils/benefitMetrics';
+import { calculateBenefitMetrics, needsAnniversaryDate } from '../utils/benefitMetrics';
 import { MinimalButton } from './MinimalButton';
 import { STATUS_COLORS, BENEFIT_CONFIGS } from '../constants';
 
@@ -12,7 +12,8 @@ interface BenefitItemProps {
   benefit: Benefit;
   onAddUsage: (benefitId: string, amount: number, description: string, date: string) => void;
   onDeleteUsage: (benefitId: string, usageId: string) => void;
-  anniversaryDate?: string;
+  onUpdateBenefit?: (bId: string, updates: Partial<Benefit>) => void;
+  annualFeeDate?: string;
   hideBorder?: boolean;
   hideAddButton?: boolean;
 }
@@ -21,7 +22,8 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
   benefit, 
   onAddUsage, 
   onDeleteUsage, 
-  anniversaryDate, 
+  onUpdateBenefit,
+  annualFeeDate, 
   hideBorder, 
   hideAddButton 
 }) => {
@@ -30,9 +32,10 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
   const [usageDate, setUsageDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showHistory, setShowHistory] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [tempExpirationDate, setTempExpirationDate] = useState<string>(benefit.expirationDate ? benefit.expirationDate.split('T')[0] : '');
 
   // Calculate current period metrics using centralized utility
-  const metrics = calculateBenefitMetrics(benefit, anniversaryDate);
+  const metrics = calculateBenefitMetrics(benefit, annualFeeDate);
   const { currentUsedAmount, remaining, remainingPercent, percent } = metrics;
 
   const isMonetary = !benefit.unit || benefit.unit === '$';
@@ -60,16 +63,67 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
     benefit.category?.toLowerCase()
   ].filter(Boolean);
 
+  const needsInfo = needsAnniversaryDate(benefit) && !benefit.isExpirationSet;
+
   return (
     <div className="benefit-item" style={hideBorder ? { borderTop: 'none', marginTop: 0, paddingTop: 0 } : {}}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
-          <h4 style={{ margin: 0 }}>{displayName}</h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <h4 style={{ margin: 0 }}>{displayName}</h4>
+            {needsAnniversaryDate(benefit) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar size={14} color="var(--text-muted)" />
+                <input 
+                  type="date" 
+                  value={tempExpirationDate} 
+                  onChange={e => setTempExpirationDate(e.target.value)}
+                  style={{ 
+                    height: '20px', 
+                    padding: '0 4px', 
+                    fontSize: '0.65rem', 
+                    borderRadius: '4px', 
+                    border: `1px solid ${needsInfo ? 'var(--warning)' : 'var(--border-color)'}`,
+                  }}
+                />
+                <button 
+                  onClick={() => {
+                    if (!tempExpirationDate || !onUpdateBenefit) return;
+                    const [year, month, day] = tempExpirationDate.split('-').map(Number);
+                    const localDate = new Date(year, month - 1, day, 12, 0, 0);
+                    onUpdateBenefit(benefit.id, { expirationDate: localDate.toISOString(), isExpirationSet: true });
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                  title="Save Expiration Date"
+                >
+                  <Check size={14} />
+                </button>
+              </div>
+            )}
+          </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
             <span>{subHeaderParts.join(' • ')}</span>
           </div>
         </div>
       </div>
+
+      {needsInfo && (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '6px', 
+          backgroundColor: 'rgba(245, 158, 11, 0.1)', 
+          padding: '4px 8px', 
+          borderRadius: '4px', 
+          marginTop: '8px',
+          border: '1px solid rgba(245, 158, 11, 0.2)'
+        }}>
+          <AlertCircle size={12} color="var(--warning)" />
+          <span style={{ fontSize: '0.65rem', color: '#92400e', fontWeight: '500' }}>
+            Action Required: Set an expiration date for this benefit.
+          </span>
+        </div>
+      )}
 
       <div className="progress-container" style={{ marginTop: '12px' }}>
         <div 

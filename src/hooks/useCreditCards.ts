@@ -19,10 +19,13 @@ export const useCreditCards = () => {
     }
   };
 
-  const updateAnniversary = (cardId: string, newDate: string) => {
+  const updateAnnualFeeDate = (cardId: string, newDate: string) => {
     setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
-        return { ...card, anniversaryDate: new Date(newDate).toISOString(), isAnniversarySet: true };
+        // Parse the local date string (YYYY-MM-DD) correctly to avoid UTC timezone shifts
+        const [year, month, day] = newDate.split('-').map(Number);
+        const localDate = new Date(year, month - 1, day, 12, 0, 0); // Set to noon local time
+        return { ...card, annualFeeDate: localDate.toISOString(), isAnnualFeeDateSet: true };
       }
       return card;
     }));
@@ -31,7 +34,7 @@ export const useCreditCards = () => {
   const handleDeleteAnniversary = (cardId: string) => {
     setStoredCards(prev => prev.map(card => {
       if (card.id === cardId) {
-        return { ...card, anniversaryDate: '', isAnniversarySet: false };
+        return { ...card, annualFeeDate: '', isAnnualFeeDateSet: false };
       }
       return card;
     }));
@@ -146,7 +149,7 @@ export const useCreditCards = () => {
     setCards,
     setStoredCards,
     deleteCard,
-    updateAnniversary,
+    updateAnnualFeeDate,
     deleteAnniversary: handleDeleteAnniversary,
     syncCards,
     addUsage,

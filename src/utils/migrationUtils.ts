@@ -92,7 +92,10 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
 
   return {
     ...card,
-    isAnniversarySet: card.isAnniversarySet ?? true,
+    // Initialize with current date if not set, as no legacy data is being migrated.
+    annualFeeDate: card.annualFeeDate || new Date().toISOString(),
+    annualFeeAmount: template?.annualFeeAmount ?? card.annualFeeAmount ?? 0,
+    isAnnualFeeDateSet: card.isAnnualFeeDateSet ?? true, // Default to true if new field is missing
     benefits: benefits.map(b => {
       let normalizedB = normalizeBenefit(b, card.issuer);
 
@@ -112,7 +115,10 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
             periodType: templateBenefit.periodType,
             resetIntervalMonths: templateBenefit.resetIntervalMonths,
             unit: templateBenefit.unit,
-            category: templateBenefit.category
+            category: templateBenefit.category,
+            // Fallback chain for legacy data recovery for expirationDate and isExpirationSet
+            expirationDate: normalizedB.expirationDate || normalizedB.issueDate || (card as any).anniversaryDate || card.annualFeeDate,
+            isExpirationSet: normalizedB.isExpirationSet ?? (card as any).isAnniversarySet ?? false
           };
         }
       }

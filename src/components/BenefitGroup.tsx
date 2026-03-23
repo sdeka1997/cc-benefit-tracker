@@ -4,6 +4,7 @@ import { addDays } from 'date-fns';
 import { BenefitItem } from './BenefitItem';
 import { getStatusColor } from '../utils/dateUtils';
 import { calculateBenefitMetrics, needsAnniversaryDate } from '../utils/benefitMetrics';
+import type { Benefit } from '../types/index';
 import type { GroupedBenefits } from '../utils/groupingUtils';
 
 interface BenefitGroupProps {
@@ -17,6 +18,7 @@ interface BenefitGroupProps {
   hideCardLabel: boolean;
   onAddUsage: (cardId: string, bId: string, amt: number, desc: string, date: string) => void;
   onDeleteUsage: (cardId: string, bId: string, uId: string) => void;
+  onUpdateBenefit: (cardId: string, bId: string, updates: Partial<Benefit>) => void;
 }
 
 export const BenefitGroup: React.FC<BenefitGroupProps> = ({
@@ -29,14 +31,15 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
   onToggleExpiry,
   hideCardLabel,
   onAddUsage,
-  onDeleteUsage
+  onDeleteUsage,
+  onUpdateBenefit
 }) => {
   const [_, name] = groupKey.includes('|') ? groupKey.split('|') : [null, groupKey];
   const groupName = name || groupKey;
 
   let groupRemaining = 0;
   benefits.forEach(b => {
-    const { remaining } = calculateBenefitMetrics(b, b.anniversaryDate);
+    const { remaining } = calculateBenefitMetrics(b, b.annualFeeDate);
     const isMonetary = !b.unit || b.unit === '$';
     if (isMonetary) {
       groupRemaining += remaining;
@@ -64,13 +67,19 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
       {!isCollapsed && (
         <div className="card-grid">
           {benefits.map(b => {
-            const { daysLeft, isFullyUsed, expiryDate } = calculateBenefitMetrics(b, b.anniversaryDate);
+            const { daysLeft, isFullyUsed, expiryDate } = calculateBenefitMetrics(b, b.annualFeeDate);
             const hasHeader = !hideCardLabel || isByExpiry;
-            const needsInfo = needsAnniversaryDate(b) && !b.isAnniversarySet;
+            const needsInfo = needsAnniversaryDate(b) && !b.isExpirationSet;
             const resetDate = addDays(expiryDate, 1);
             
             return (
-              <div key={b.id} className="card" style={{ padding: '1rem', opacity: isFullyUsed ? 0.7 : 1 }}>
+              <div key={b.id} className="card" style={{ 
+                padding: '1rem', 
+                opacity: isFullyUsed ? 0.7 : 1,
+                backgroundColor: needsInfo ? 'rgba(245, 158, 11, 0.05)' : 'white',
+                border: needsInfo ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid var(--border-color)',
+                boxShadow: needsInfo ? '0 0 10px rgba(245, 158, 11, 0.1)' : 'none'
+              }}>
                 {hasHeader && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -108,11 +117,12 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
                 )}
                 <BenefitItem 
                   benefit={b} 
-                  anniversaryDate={b.anniversaryDate}
+                  annualFeeDate={b.annualFeeDate}
                   hideBorder={!hasHeader}
                   hideAddButton={isFullyUsed}
                   onAddUsage={(bId, amt, desc, date) => onAddUsage(b.cardId, bId, amt, desc, date)}
                   onDeleteUsage={(bId, uId) => onDeleteUsage(b.cardId, bId, uId)}
+                  onUpdateBenefit={(bId, updates) => onUpdateBenefit(b.cardId, bId, updates)}
                 />
               </div>
             );

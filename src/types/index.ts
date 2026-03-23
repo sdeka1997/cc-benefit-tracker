@@ -20,6 +20,8 @@ export interface Benefit {
   lastResetDate: string;
   resetIntervalMonths?: number;
   issueDate?: string; // For anniversary benefits
+  expirationDate?: string; // Specific expiration date for anniversary benefits
+  isExpirationSet?: boolean; // Track if user has explicitly set expiration
   unit?: string; // '$' (default), 'passes', 'miles', etc.
   isHidden?: boolean; // Whether the benefit is hidden from the UI tabs
   isCustom?: boolean; // Whether the benefit was manually added by the user
@@ -31,8 +33,9 @@ export interface CreditCard {
   name: string;
   issuer: string;
   benefits: Benefit[];
-  anniversaryDate: string;
-  isAnniversarySet?: boolean; // Track if user has explicitly set this
+  annualFeeDate: string;
+  annualFeeAmount: number;
+  isAnnualFeeDateSet?: boolean; // Track if user has explicitly set this
 }
 
 export interface UserSettings {

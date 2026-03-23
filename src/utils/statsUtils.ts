@@ -17,21 +17,21 @@ export const calculateDashboardStats = (cards: CreditCard[]): DashboardStats => 
     acc + card.benefits.reduce((bAcc, b) => {
       const isMonetary = !b.unit || b.unit === '$';
       if (!isMonetary) return bAcc;
-      const { remaining } = calculateBenefitMetrics(b, card.anniversaryDate);
+      const { remaining } = calculateBenefitMetrics(b, card.annualFeeDate);
       return bAcc + remaining;
     }, 0), 0
   );
 
   const allBenefits = cards.flatMap(card => card.benefits.map(b => ({ 
     ...b, 
-    anniversaryDate: card.anniversaryDate 
+    annualFeeDate: card.annualFeeDate 
   })));
 
   const nextExpiryBenefit = allBenefits
-    .filter(b => calculateBenefitMetrics(b, b.anniversaryDate).remaining > 0)
-    .sort((a, b) => calculateBenefitMetrics(a, a.anniversaryDate).daysLeft - calculateBenefitMetrics(b, b.anniversaryDate).daysLeft)[0];
+    .filter(b => calculateBenefitMetrics(b, b.annualFeeDate).remaining > 0)
+    .sort((a, b) => calculateBenefitMetrics(a, a.annualFeeDate).daysLeft - calculateBenefitMetrics(b, b.annualFeeDate).daysLeft)[0];
 
-  const nextExpiryDays = nextExpiryBenefit ? calculateBenefitMetrics(nextExpiryBenefit, nextExpiryBenefit.anniversaryDate).daysLeft : null;
+  const nextExpiryDays = nextExpiryBenefit ? calculateBenefitMetrics(nextExpiryBenefit, nextExpiryBenefit.annualFeeDate).daysLeft : null;
 
   return {
     lifetimeSavings,

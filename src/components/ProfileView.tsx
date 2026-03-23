@@ -5,12 +5,11 @@ import { getDisplayCardName } from '../utils/stringUtils';
 import { MinimalButton } from './MinimalButton';
 import { FLAGS } from '../config';
 import { STATUS_COLORS, RESET_TYPES } from '../constants';
-import { needsAnniversaryDate } from '../utils/benefitMetrics';
 
 interface CardManagementItemProps {
   card: CreditCard;
   onDeleteCard: (id: string) => void;
-  onUpdateAnniversary: (id: string, date: string) => void;
+  onUpdateAnnualFeeDate: (id: string, date: string) => void;
   onDeleteAnniversary: (id: string) => void;
   onAddBenefit: (cardId: string, name: string, amount: number, freq: ResetFrequency, period: PeriodType, interval?: number, issueDate?: string) => void;
   onUpdateBenefit: (cardId: string, bId: string, updates: Partial<Benefit>) => void;
@@ -21,7 +20,7 @@ interface CardManagementItemProps {
 const CardManagementItem: React.FC<CardManagementItemProps> = ({
   card,
   onDeleteCard,
-  onUpdateAnniversary,
+  onUpdateAnnualFeeDate,
   onDeleteAnniversary,
   onAddBenefit,
   onUpdateBenefit,
@@ -29,7 +28,7 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
   setAddingBenefitTo
 }) => {
   const [isEditingAnniversary, setIsEditingAnniversary] = useState(false);
-  const [tempAnniversary, setTempAnniversary] = useState(card.anniversaryDate ? card.anniversaryDate.split('T')[0] : '');
+  const [tempAnniversary, setTempAnniversary] = useState(card.annualFeeDate ? card.annualFeeDate.split('T')[0] : '');
   const [showDateError, setShowDateError] = useState(false);
   
   const [newBName, setNewBName] = useState('');
@@ -39,7 +38,7 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
   const [newBIssueDate, setNewBIssueDate] = useState<string>('');
 
   const selectedResetType = RESET_TYPES.find(t => t.id === newBResetTypeId) || RESET_TYPES[3];
-  const cardNeedsInfo = !card.isAnniversarySet && card.benefits.some(needsAnniversaryDate);
+  const cardNeedsInfo = card.annualFeeAmount > 0 && !card.isAnnualFeeDateSet;
 
   return (
     <div className={`card ${cardNeedsInfo ? 'needs-info' : ''}`} style={{ padding: '1.5rem' }}>
@@ -56,7 +55,7 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
         }}>
           <AlertCircle size={16} color="var(--warning)" />
           <span style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: '500' }}>
-            Action Required: Set your card's anniversary date to track benefits correctly.
+            Action Required: Set your card's annual fee date to track it correctly.
           </span>
         </div>
       )}
@@ -64,71 +63,73 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <h3 style={{ margin: 0 }}>{getDisplayCardName(card.name, card.issuer)}</h3>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {isEditingAnniversary || !card.isAnniversarySet ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Calendar size={14} color="var(--text-muted)" />
-                  <input 
-                    type="date" 
-                    value={tempAnniversary} 
-                    onChange={e => {
-                      setTempAnniversary(e.target.value);
-                      setShowDateError(false);
-                    }}
-                    style={{ 
-                      height: '24px', 
-                      padding: '0 4px', 
-                      fontSize: '0.75rem', 
-                      borderRadius: '4px', 
-                      border: `1px solid ${showDateError ? 'var(--danger)' : 'var(--border-color)'}`, 
-                      outline: showDateError ? '1px solid var(--danger)' : 'none' 
-                    }}
-                    autoFocus={isEditingAnniversary}
-                  />
-                  <button 
-                    onClick={() => {
-                      if (!tempAnniversary) {
-                        setShowDateError(true);
-                        return;
-                      }
-                      onUpdateAnniversary(card.id, tempAnniversary);
-                      setIsEditingAnniversary(false);
-                      setShowDateError(false);
-                    }}
-                    style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                    title="Save"
-                  >
-                    <Check size={16} />
-                  </button>
-                  {card.isAnniversarySet && (
-                    <MinimalButton 
-                      onClick={() => {
-                        onDeleteAnniversary(card.id);
-                        setIsEditingAnniversary(false);
-                        setTempAnniversary(''); // Ensure the input is fully cleared
+            {card.annualFeeAmount > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {isEditingAnniversary || !card.isAnnualFeeDateSet ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Calendar size={14} color="var(--text-muted)" />
+                    <input 
+                      type="date" 
+                      value={tempAnniversary} 
+                      onChange={e => {
+                        setTempAnniversary(e.target.value);
                         setShowDateError(false);
                       }}
-                      color={STATUS_COLORS.MUTED}
-                      title="Delete Anniversary Date"
+                      style={{ 
+                        height: '24px', 
+                        padding: '0 4px', 
+                        fontSize: '0.75rem', 
+                        borderRadius: '4px', 
+                        border: `1px solid ${showDateError ? 'var(--danger)' : 'var(--border-color)'}`, 
+                        outline: showDateError ? '1px solid var(--danger)' : 'none' 
+                      }}
+                      autoFocus={isEditingAnniversary}
+                    />
+                    <button 
+                      onClick={() => {
+                        if (!tempAnniversary) {
+                          setShowDateError(true);
+                          return;
+                        }
+                        onUpdateAnnualFeeDate(card.id, tempAnniversary);
+                        setIsEditingAnniversary(false);
+                        setShowDateError(false);
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                      title="Save"
                     >
-                      <CloseIcon size={16} />
-                    </MinimalButton>
-                  )}
-                </div>
-              ) : (
-                <MinimalButton 
-                  onClick={() => {
-                    setIsEditingAnniversary(true);
-                    setTempAnniversary(card.anniversaryDate ? card.anniversaryDate.split('T')[0] : '');
-                    setShowDateError(false);
-                  }}
-                  color="var(--primary)"
-                  title={`Anniversary: ${new Date(card.anniversaryDate).toLocaleDateString()}`}
-                >
-                  <Calendar size={16} />
-                </MinimalButton>
-              )}
-            </div>
+                      <Check size={16} />
+                    </button>
+                    {card.isAnnualFeeDateSet && (
+                      <MinimalButton 
+                        onClick={() => {
+                          onDeleteAnniversary(card.id);
+                          setIsEditingAnniversary(false);
+                          setTempAnniversary(''); // Ensure the input is fully cleared
+                          setShowDateError(false);
+                        }}
+                        color={STATUS_COLORS.MUTED}
+                        title="Delete Annual Fee Date"
+                      >
+                        <CloseIcon size={16} />
+                      </MinimalButton>
+                    )}
+                  </div>
+                ) : (
+                  <MinimalButton 
+                    onClick={() => {
+                      setIsEditingAnniversary(true);
+                      setTempAnniversary(card.annualFeeDate ? card.annualFeeDate.split('T')[0] : '');
+                      setShowDateError(false);
+                    }}
+                    color="var(--primary)"
+                    title={`Annual Fee: ${new Date(card.annualFeeDate).toLocaleDateString()} ($${card.annualFeeAmount})`}
+                  >
+                    <Calendar size={16} />
+                  </MinimalButton>
+                )}
+              </div>
+            )}
           </div>
         </div>
         <button onClick={() => onDeleteCard(card.id)} className="btn-outline" style={{ color: STATUS_COLORS.DANGER, padding: '6px', cursor: 'pointer' }}>
@@ -265,7 +266,7 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
 interface ProfileViewProps {
   cards: CreditCard[];
   onDeleteCard: (id: string) => void;
-  onUpdateAnniversary: (id: string, date: string) => void;
+  onUpdateAnnualFeeDate: (id: string, date: string) => void;
   onDeleteAnniversary: (id: string) => void;
   onAddBenefit: (cardId: string, name: string, amount: number, freq: ResetFrequency, period: PeriodType, interval?: number, issueDate?: string) => void;
   onUpdateBenefit: (cardId: string, bId: string, updates: Partial<Benefit>) => void;
@@ -275,7 +276,7 @@ interface ProfileViewProps {
 export const ProfileView: React.FC<ProfileViewProps> = ({
   cards,
   onDeleteCard,
-  onUpdateAnniversary,
+  onUpdateAnnualFeeDate,
   onDeleteAnniversary,
   onAddBenefit,
   onUpdateBenefit,
@@ -300,6 +301,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {[...cards].sort((a, b) => {
+            const needsA = a.annualFeeAmount > 0 && !a.isAnnualFeeDateSet;
+            const needsB = b.annualFeeAmount > 0 && !b.isAnnualFeeDateSet;
+            
+            if (needsA && !needsB) return -1;
+            if (!needsA && needsB) return 1;
+            
             const nameA = getDisplayCardName(a.name, a.issuer).toLowerCase();
             const nameB = getDisplayCardName(b.name, b.issuer).toLowerCase();
             return nameA.localeCompare(nameB);
@@ -308,7 +315,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               key={card.id}
               card={card}
               onDeleteCard={onDeleteCard}
-              onUpdateAnniversary={onUpdateAnniversary}
+              onUpdateAnnualFeeDate={onUpdateAnnualFeeDate}
               onDeleteAnniversary={onDeleteAnniversary}
               onAddBenefit={onAddBenefit}
               onUpdateBenefit={onUpdateBenefit}
