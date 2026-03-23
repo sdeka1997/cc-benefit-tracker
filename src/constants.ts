@@ -1,3 +1,5 @@
+import type { ResetFrequency, PeriodType } from './types/index';
+
 export const STATUS_COLORS = {
   DANGER: 'var(--danger)',
   WARNING: 'var(--warning)',
@@ -15,6 +17,12 @@ export const DEFAULT_INTERVALS = {
   GLOBAL_ENTRY: 48,
   COMPANION_AWARD: 12,
   ANNUAL_ROLLING: 12,
+};
+
+export const BENEFIT_NAMES = {
+  COMPANION_AWARD: '25K Companion Award',
+  GLOBAL_ENTRY: 'Global Entry / TSA PreCheck',
+  TRAVEL_CREDIT: 'Travel Credit',
 };
 
 export const TABS = {
@@ -40,4 +48,22 @@ export const EXPIRY_ORDER = [
   EXPIRY_GROUPS.QUARTER,
   EXPIRY_GROUPS.LATER,
   EXPIRY_GROUPS.FULLY_USED,
+];
+
+export interface ResetTypeOption {
+  id: string;
+  label: string;
+  frequency: ResetFrequency;
+  periodType: PeriodType;
+  hasInterval?: boolean;
+}
+
+export const RESET_TYPES: ResetTypeOption[] = [
+  { id: 'calendar_monthly', label: 'Monthly (Calendar)', frequency: 'monthly', periodType: 'calendar' },
+  { id: 'calendar_quarterly', label: 'Quarterly (Calendar)', frequency: 'quarterly', periodType: 'calendar' },
+  { id: 'calendar_semi_annually', label: 'Semi-Annual (Calendar)', frequency: 'semi_annually', periodType: 'calendar' },
+  { id: 'calendar_annually', label: 'Annual (Calendar Year)', frequency: 'annually', periodType: 'calendar' },
+  { id: 'rolling_annually', label: 'Annual (Anniversary)', frequency: 'annually', periodType: 'rolling' },
+  { id: 'rolling_anniversary', label: 'Anniversary', frequency: 'anniversary', periodType: 'rolling' },
+  { id: 'rolling_interval', label: 'Interval', frequency: 'interval', periodType: 'rolling', hasInterval: true },
 ];

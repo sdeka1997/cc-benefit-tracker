@@ -4,7 +4,7 @@ import type { CreditCard, ResetFrequency, PeriodType } from '../types/index';
 import { getDisplayCardName } from '../utils/stringUtils';
 import { MinimalButton } from './MinimalButton';
 import { FLAGS } from '../config';
-import { STATUS_COLORS } from '../constants';
+import { STATUS_COLORS, RESET_TYPES } from '../constants';
 
 interface ProfileViewProps {
   cards: CreditCard[];
@@ -26,11 +26,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [addingBenefitTo, setAddingBenefitTo] = useState<string | null>(null);
   const [newBName, setNewBName] = useState('');
   const [newBAmount, setNewBAmount] = useState('');
-  const [newBResetType, setNewBResetType] = useState<string>('calendar_annually');
+  const [newBResetTypeId, setNewBResetTypeId] = useState<string>(RESET_TYPES[3].id); // Default to Annual Calendar
   const [newBIntervalMonths, setNewBIntervalMonths] = useState<string>('48');
   const [newBIssueDate, setNewBIssueDate] = useState<string>('');
   const [editingAnniversaryFor, setEditingAnniversaryFor] = useState<string | null>(null);
   const [tempAnniversary, setNewTempAnniversary] = useState('');
+
+  const selectedResetType = RESET_TYPES.find(t => t.id === newBResetTypeId) || RESET_TYPES[3];
 
   return (
     <div className="profile-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -145,20 +147,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <select 
-                            value={newBResetType} 
-                            onChange={e => setNewBResetType(e.target.value)}
+                            value={newBResetTypeId} 
+                            onChange={e => setNewBResetTypeId(e.target.value)}
                             style={{ flex: 2, padding: '4px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}
                           >
-                            <option value="calendar_monthly">Monthly (Calendar)</option>
-                            <option value="calendar_quarterly">Quarterly (Calendar)</option>
-                            <option value="calendar_semi_annually">Semi-Annual (Calendar)</option>
-                            <option value="calendar_annually">Annual (Calendar Year)</option>
-                            <option value="rolling_annually">Annual (Rolling / Anniversary)</option>
-                            <option value="rolling_anniversary">Anniversary</option>
-                            <option value="rolling_interval">Interval</option>
+                            {RESET_TYPES.map(type => (
+                              <option key={type.id} value={type.id}>{type.label}</option>
+                            ))}
                           </select>
                           
-                          {(newBResetType === 'rolling_anniversary' || newBResetType === 'rolling_interval') && (
+                          {(selectedResetType.hasInterval) && (
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                               <input 
                                 type="number"
@@ -168,7 +166,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                                 style={{ width: '60px', padding: '4px 8px', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}
                                 title="Reset interval in months"
                               />
-                              {newBResetType === 'rolling_anniversary' && (
+                              {selectedResetType.frequency === 'anniversary' && (
                                 <input 
                                   type="date"
                                   value={newBIssueDate}
@@ -185,16 +183,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                             style={{ padding: '4px 12px', fontSize: '0.85rem' }}
                             onClick={() => {
                               if (newBName && newBAmount) {
-                                const [period, freq] = newBResetType.split('_');
-                                const frequency = (newBResetType === 'rolling_anniversary' ? 'anniversary' : (newBResetType === 'rolling_interval' ? 'interval' : freq)) as ResetFrequency;
-                                const periodType = period as PeriodType;
-                                const intervalMonths = (newBResetType === 'rolling_anniversary' || newBResetType === 'rolling_interval') ? parseInt(newBIntervalMonths) : undefined;
-                                
-                                onAddBenefit(card.id, newBName, parseFloat(newBAmount), frequency, periodType, intervalMonths, newBIssueDate);
+                                onAddBenefit(
+                                  card.id, 
+                                  newBName, 
+                                  parseFloat(newBAmount), 
+                                  selectedResetType.frequency, 
+                                  selectedResetType.periodType, 
+                                  selectedResetType.hasInterval ? parseInt(newBIntervalMonths) : undefined, 
+                                  newBIssueDate
+                                );
                                 setAddingBenefitTo(null);
                                 setNewBName('');
                                 setNewBAmount('');
-                                setNewBResetType('calendar_annually');
+                                setNewBResetTypeId(RESET_TYPES[3].id);
                                 setNewBIssueDate('');
                               }
                             }}

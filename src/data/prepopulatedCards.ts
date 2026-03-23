@@ -1,4 +1,5 @@
 import type { CreditCard, Benefit, PeriodType, ResetFrequency } from '../types/index';
+import { BENEFIT_NAMES, DEFAULT_INTERVALS } from '../constants';
 
 const createBenefit = (
   name: string, 
@@ -35,7 +36,7 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
       createBenefit('Splurge Credit', 200, 'annually', 'Shopping', 'calendar'),
       createBenefit('Blacklane Credit', 100, 'semi_annually', 'Travel', 'calendar'),
       createBenefit('4 Admirals Club Passes', 4, 'annually', 'Travel', 'calendar', undefined, 'passes'),
-      createBenefit('Global Entry / TSA PreCheck', 120, 'interval', 'Travel', 'rolling', 48),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
     ]
   },
   {
@@ -73,8 +74,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     issuer: 'Capital One',
     anniversaryDate: new Date().toISOString(),
     benefits: [
-      createBenefit('Travel Credit', 300, 'anniversary', 'Travel', 'rolling', 12),
-      createBenefit('Global Entry / TSA PreCheck', 120, 'interval', 'Travel', 'rolling', 48),
+      createBenefit(BENEFIT_NAMES.TRAVEL_CREDIT, 300, 'anniversary', 'Travel', 'rolling', DEFAULT_INTERVALS.ANNUAL_ROLLING),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
     ]
   },
   {
@@ -85,8 +86,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     benefits: [
       createBenefit('Alaska Lounge Passes', 2, 'quarterly', 'Travel', 'calendar', undefined, 'passes'),
       createBenefit('Alaska Inflight Wi-Fi Passes', 2, 'quarterly', 'Travel', 'calendar', undefined, 'passes'),
-      createBenefit('25K Companion Award', 1, 'anniversary', 'Travel', 'rolling', 12, 'passes'),
-      createBenefit('Global Entry / TSA PreCheck', 120, 'interval', 'Travel', 'rolling', 48),
+      createBenefit(BENEFIT_NAMES.COMPANION_AWARD, 1, 'anniversary', 'Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
     ]
   }
 ];
