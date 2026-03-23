@@ -50,7 +50,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {cards.map(card => {
+          {[...cards].sort((a, b) => {
+            const nameA = getDisplayCardName(a.name, a.issuer).toLowerCase();
+            const nameB = getDisplayCardName(b.name, b.issuer).toLowerCase();
+            return nameA.localeCompare(nameB);
+          }).map(card => {
             const cardNeedsInfo = !card.isAnniversarySet;
             return (
               <div key={card.id} className={`card ${cardNeedsInfo ? 'needs-info' : ''}`} style={{ padding: '1.5rem' }}>
