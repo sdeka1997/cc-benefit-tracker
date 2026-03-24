@@ -20,8 +20,6 @@ export const normalizeBenefit = (b: Benefit, cardIssuer: string): Benefit => {
     configKey = BENEFIT_NAMES.GLOBAL_ENTRY;
   } else if (lowercaseName.includes('companion award')) {
     configKey = BENEFIT_NAMES.COMPANION_AWARD;
-  } else if (lowercaseName.includes('bilt cash')) {
-    configKey = BENEFIT_NAMES.BILT_CASH;
   } else if (cardIssuer === 'Capital One' && lowercaseName.includes('travel credit')) {
     configKey = BENEFIT_NAMES.TRAVEL_CREDIT;
   } else if (lowercaseName.includes('hotel credit')) {
@@ -116,7 +114,6 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
             resetIntervalMonths: templateBenefit.resetIntervalMonths,
             unit: templateBenefit.unit,
             category: templateBenefit.category,
-            isHidden: templateBenefit.isHidden ?? normalizedB.isHidden,
             // Fallback chain for legacy data recovery for expirationDate and isExpirationSet
             expirationDate: normalizedB.expirationDate || normalizedB.issueDate || (card as any).anniversaryDate || card.annualFeeDate,
             isExpirationSet: normalizedB.isExpirationSet ?? (card as any).isAnniversarySet ?? false

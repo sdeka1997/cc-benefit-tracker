@@ -20,7 +20,6 @@ export const BENEFIT_NAMES = {
   HOTEL_CREDIT: 'Hotel Credit',
   DOORDASH_CREDIT: 'DoorDash Credit',
   INSTACART_CREDIT: 'Instacart Credit',
-  BILT_CASH: 'Bilt Cash',
   SPLURGE_CREDIT: 'Splurge Credit',
   BLACKLANE_CREDIT: 'Blacklane Credit',
   ADMIRALS_CLUB_PASSES: '4 Admirals Club Passes',
@@ -52,14 +51,6 @@ export const BENEFIT_CONFIGS: Record<string, BenefitConfiguration> = {
     periodType: 'rolling',
     resetIntervalMonths: 12,
     unit: 'passes'
-  },
-  [BENEFIT_NAMES.BILT_CASH]: {
-    defaultAmount: 1000,
-    frequency: 'annually',
-    periodType: 'calendar',
-    displayMode: 'spent',
-    hideTotalInSubheader: true,
-    unit: '$'
   },
   [BENEFIT_NAMES.TRAVEL_CREDIT]: {
     frequency: 'anniversary',
