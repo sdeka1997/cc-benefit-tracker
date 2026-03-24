@@ -30,6 +30,23 @@ function App() {
 
   const { user, settings, syncStatus, loginWithGoogle, logout, updateSettings } = useCloudSync(storedCards, setStoredCards);
 
+  // Auto-persist normalized changes back to stored state
+  // This ensures that template updates (e.g. benefit removal/renaming) are pushed to the cloud
+  useEffect(() => {
+    if (storedCards.length > 0 && cards.length > 0) {
+      const storedJson = JSON.stringify(storedCards);
+      const normalizedJson = JSON.stringify(cards);
+      
+      if (storedJson !== normalizedJson) {
+        // Use a small delay to avoid race conditions during initial load/sync
+        const timeout = setTimeout(() => {
+          setStoredCards(cards);
+        }, 500);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [cards, storedCards, setStoredCards]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Initialize tab from hash if present
