@@ -33,11 +33,11 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 0,
     benefits: [
-      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 300, 'annually', 'Travel', 'calendar'),
+      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 300, 'annually', 'Lodging', 'calendar'),
       createBenefit(BENEFIT_NAMES.SPLURGE_CREDIT, 200, 'annually', 'Shopping', 'calendar'),
-      createBenefit(BENEFIT_NAMES.BLACKLANE_CREDIT, 100, 'semi_annually', 'Travel', 'calendar'),
-      createBenefit(BENEFIT_NAMES.ADMIRALS_CLUB_PASSES, 4, 'annually', 'Travel', 'calendar', undefined, 'passes'),
-      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+      createBenefit(BENEFIT_NAMES.BLACKLANE_CREDIT, 100, 'semi_annually', 'Travel Credit', 'calendar'),
+      createBenefit(BENEFIT_NAMES.ADMIRALS_CLUB_PASSES, 4, 'annually', 'Air Travel', 'calendar', undefined, 'passes'),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
     ]
   },
   {
@@ -77,8 +77,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 395,
     benefits: [
-      createBenefit(BENEFIT_NAMES.TRAVEL_CREDIT, 300, 'anniversary', 'Travel', 'rolling', DEFAULT_INTERVALS.ANNUAL_ROLLING),
-      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+      createBenefit(BENEFIT_NAMES.TRAVEL_CREDIT, 300, 'anniversary', 'Travel Credit', 'rolling', DEFAULT_INTERVALS.ANNUAL_ROLLING),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
     ]
   },
   {
@@ -88,10 +88,10 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 95,
     benefits: [
-      createBenefit(BENEFIT_NAMES.ALASKA_LOUNGE_PASSES, 2, 'quarterly', 'Travel', 'calendar', undefined, 'passes'),
-      createBenefit(BENEFIT_NAMES.ALASKA_WIFI_PASSES, 2, 'quarterly', 'Travel', 'calendar', undefined, 'passes'),
-      createBenefit(BENEFIT_NAMES.COMPANION_AWARD, 1, 'anniversary', 'Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
-      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+      createBenefit(BENEFIT_NAMES.ALASKA_LOUNGE_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes'),
+      createBenefit(BENEFIT_NAMES.ALASKA_WIFI_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes'),
+      createBenefit(BENEFIT_NAMES.COMPANION_AWARD, 1, 'anniversary', 'Air Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
     ]
   },
   {
@@ -101,7 +101,7 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 95,
     benefits: [
-      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 50, 'anniversary', 'Travel', 'rolling', 12),
+      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 50, 'anniversary', 'Lodging', 'rolling', 12),
       createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'monthly', 'Dining', 'calendar'),
     ]
   },
@@ -112,7 +112,7 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 0,
     benefits: [
-      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 200, 'semi_annually', 'Travel', 'calendar'),
+      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 200, 'semi_annually', 'Lodging', 'calendar'),
     ]
   }
 ];

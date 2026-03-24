@@ -70,7 +70,12 @@ export const groupBenefitsByCategory = (cards: CreditCard[]): GroupedBenefits =>
     })));
 
   const groups = allBenefits.reduce((acc, b) => {
-    const cat = b.category || 'Other';
+    let cat = b.category || 'Other';
+    // Collapse specific travel categories into 'Travel' for main grouping
+    if (['Air Travel', 'Lodging', 'Travel Credit'].includes(cat)) {
+      cat = 'Travel';
+    }
+    
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(b);
     return acc;
