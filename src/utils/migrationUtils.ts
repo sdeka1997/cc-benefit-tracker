@@ -3,6 +3,10 @@ import { getDisplayBenefitName } from './stringUtils';
 import { BENEFIT_NAMES, BENEFIT_CONFIGS } from '../constants';
 import { PREPOPULATED_CARDS } from '../data/prepopulatedCards';
 
+/**
+ * Normalizes a single benefit's structure and configuration.
+ * Used as a fallback for custom cards or to ensure basic field integrity.
+ */
 export const normalizeBenefit = (b: Benefit, cardIssuer: string): Benefit => {
   let name = getDisplayBenefitName(b.name);
   const lowercaseName = name.toLowerCase();
@@ -14,7 +18,7 @@ export const normalizeBenefit = (b: Benefit, cardIssuer: string): Benefit => {
   let resetIntervalMonths = b.resetIntervalMonths;
   let periodType = b.periodType || (freq === 'annually' || freq === 'anniversary' ? 'rolling' : 'calendar');
 
-  // 2. Identify known benefits by name
+  // 2. Identify known benefits by name to apply system configs
   let configKey: string | null = null;
   if (lowercaseName.includes('global entry') || lowercaseName.includes('tsa precheck')) {
     configKey = BENEFIT_NAMES.GLOBAL_ENTRY;
@@ -53,81 +57,72 @@ export const normalizeBenefit = (b: Benefit, cardIssuer: string): Benefit => {
   };
 };
 
+/**
+ * Normalizes a CreditCard object. 
+ * If the card has a templateId, the template becomes the master source of truth
+ * for the card's name, issuer, fee, and benefit list.
+ */
 export const normalizeCard = (card: CreditCard): CreditCard => {
-  const template = card.templateId ? PREPOPULATED_CARDS.find(p => p.id === card.templateId) : undefined;
+  const templateId = card.templateId || (card as any).id; // Fallback for legacy data
+  const template = PREPOPULATED_CARDS.find(p => p.id === templateId);
 
-  let benefits = card.benefits;
+  // 1. Basic field initialization (ensure required fields exist)
+  const annualFeeDate = card.annualFeeDate || (card as any).anniversaryDate || new Date().toISOString();
+  const isAnnualFeeDateSet = card.isAnnualFeeDateSet ?? (card as any).isAnniversarySet ?? true;
 
-  // Dynamically remove benefits that have been dropped from the template.
-  // We only drop a benefit if:
-  // 1. The card came from a template.
-  // 2. The benefit is NOT marked as 'isCustom' (manually added by user).
-  // 3. The benefit no longer exists in the current template.
-  // 4. The benefit's name is a known standard template benefit name (to protect legacy custom benefits added before 'isCustom' existed).
-  if (template) {
-    const knownSystemNames = Object.values(BENEFIT_NAMES).map(n => n.toLowerCase());
-    
-    benefits = benefits.filter(b => {
-      // 1. Always keep benefits explicitly marked as custom
-      if (b.isCustom === true) return true; 
-      
-      const normalizedName = getDisplayBenefitName(b.name).toLowerCase();
-      const existsInTemplate = template.benefits.some(
-        tb => getDisplayBenefitName(tb.name).toLowerCase() === normalizedName
-      );
-      
-      // 2. If it's in the current template, keep it
-      if (existsInTemplate) return true; 
-      
-      // 3. If it's explicitly marked as NOT custom (i.e. it came from a template)
-      // and it's no longer in that template, it's deprecated. Remove it.
-      if (b.isCustom === false) return false;
-      
-      // 4. Fallback for legacy benefits (isCustom is undefined):
-      // Only remove if it matches a known system benefit name.
-      const isKnownSystemBenefit = knownSystemNames.some(kn => normalizedName.includes(kn) || kn.includes(normalizedName));
-      if (isKnownSystemBenefit) return false;
-      
-      // Otherwise, it's likely a legacy custom benefit. Keep it.
-      return true;
-    });
+  // 2. If no template exists (Custom Card), just perform basic normalization
+  if (!template) {
+    return {
+      ...card,
+      annualFeeDate,
+      isAnnualFeeDateSet,
+      benefits: card.benefits.map(b => normalizeBenefit(b, card.issuer))
+    };
   }
 
+  // 3. TEMPLATE SYNC (Master List Logic)
+  // We reconstruct the benefit list based on the template.
+  const syncedBenefits = template.benefits.map(templateBenefit => {
+    const templateName = templateBenefit.name.toLowerCase();
+    
+    // Find matching existing benefit by name
+    const existingBenefit = card.benefits.find(b => {
+      const bName = b.name.toLowerCase();
+      const bDisplayName = getDisplayBenefitName(b.name).toLowerCase();
+      return bName === templateName || bDisplayName === templateName;
+    });
+
+    if (existingBenefit) {
+      // MERGE: Keep user data (id, usages, expiration), take configuration from template
+      return {
+        ...existingBenefit,
+        name: templateBenefit.name,
+        totalAmount: templateBenefit.totalAmount,
+        frequency: templateBenefit.frequency,
+        periodType: templateBenefit.periodType,
+        resetIntervalMonths: templateBenefit.resetIntervalMonths,
+        unit: templateBenefit.unit,
+        category: templateBenefit.category,
+        isCustom: false,
+        // Carry over expiration logic
+        expirationDate: existingBenefit.expirationDate || existingBenefit.issueDate || (card as any).anniversaryDate || annualFeeDate,
+        isExpirationSet: existingBenefit.isExpirationSet ?? (card as any).isAnniversarySet ?? false
+      };
+    }
+    
+    // ADD: New benefit from template the user doesn't have yet
+    return { ...templateBenefit, isCustom: false };
+  });
+
+  // 4. Return the card fully synchronized with its template
   return {
     ...card,
-    // Initialize with current date if not set, as no legacy data is being migrated.
-    annualFeeDate: card.annualFeeDate || new Date().toISOString(),
-    annualFeeAmount: template?.annualFeeAmount ?? card.annualFeeAmount ?? 0,
-    isAnnualFeeDateSet: card.isAnnualFeeDateSet ?? true, // Default to true if new field is missing
-    benefits: benefits.map(b => {
-      let normalizedB = normalizeBenefit(b, card.issuer);
-
-      // 5. Sync with template data if this card came from a template
-      // This ensures that if we update the template (e.g., Hotel Credit goes from 200 to 300),
-      // the user's existing cards get the updated values automatically.
-      if (template) {
-        const templateBenefit = template.benefits.find(
-          tb => getDisplayBenefitName(tb.name).toLowerCase() === normalizedB.name.toLowerCase()
-        );
-        
-        if (templateBenefit) {
-          normalizedB = {
-            ...normalizedB,
-            totalAmount: templateBenefit.totalAmount,
-            frequency: templateBenefit.frequency,
-            periodType: templateBenefit.periodType,
-            resetIntervalMonths: templateBenefit.resetIntervalMonths,
-            unit: templateBenefit.unit,
-            category: templateBenefit.category,
-            isCustom: false, // Explicitly mark as a system benefit
-            // Fallback chain for legacy data recovery for expirationDate and isExpirationSet
-            expirationDate: normalizedB.expirationDate || normalizedB.issueDate || (card as any).anniversaryDate || card.annualFeeDate,
-            isExpirationSet: normalizedB.isExpirationSet ?? (card as any).isAnniversarySet ?? false
-          };
-        }
-      }
-
-      return normalizedB;
-    })
+    templateId: template.id,
+    name: template.name,
+    issuer: template.issuer,
+    annualFeeAmount: template.annualFeeAmount,
+    annualFeeDate,
+    isAnnualFeeDateSet,
+    benefits: syncedBenefits
   };
 };
