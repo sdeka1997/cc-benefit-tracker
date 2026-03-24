@@ -65,7 +65,10 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
   // 3. The benefit no longer exists in the current template.
   // 4. The benefit's name is a known standard template benefit name (to protect legacy custom benefits added before 'isCustom' existed).
   if (template) {
-    const knownTemplateNames = Object.values(BENEFIT_NAMES).map(n => n.toLowerCase());
+    // Include 'Bilt Cash' explicitly here so it gets cleaned up even though 
+    // it's removed from the main BENEFIT_NAMES constant.
+    const deprecatedNames = ['Bilt Cash'];
+    const knownSystemNames = [...Object.values(BENEFIT_NAMES), ...deprecatedNames].map(n => n.toLowerCase());
     
     benefits = benefits.filter(b => {
       if (b.isCustom) return true; // Always keep user-added benefits
@@ -78,7 +81,7 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
       if (existsInTemplate) return true; // Still in template, keep it
       
       // Not in template. Is it a known system benefit?
-      const isKnownSystemBenefit = knownTemplateNames.some(kn => normalizedName.includes(kn) || kn.includes(normalizedName));
+      const isKnownSystemBenefit = knownSystemNames.some(kn => normalizedName.includes(kn) || kn.includes(normalizedName));
       
       // If it's a known system benefit but missing from the template, it was deprecated. Drop it.
       if (isKnownSystemBenefit) return false;
