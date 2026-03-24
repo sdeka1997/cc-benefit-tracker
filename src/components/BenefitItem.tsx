@@ -32,11 +32,12 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
   const [usageDate, setUsageDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [showHistory, setShowHistory] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isEditingExpiration, setIsEditingExpiration] = useState(false);
   const [tempExpirationDate, setTempExpirationDate] = useState<string>(benefit.expirationDate ? benefit.expirationDate.split('T')[0] : '');
 
   // Calculate current period metrics using centralized utility
   const metrics = calculateBenefitMetrics(benefit, annualFeeDate);
-  const { currentUsedAmount, remaining, remainingPercent, percent } = metrics;
+  const { currentUsedAmount, remaining, remainingPercent, percent, expiryDate } = metrics;
 
   const isMonetary = !benefit.unit || benefit.unit === '$';
   const displayName = getDisplayBenefitName(benefit.name);
@@ -73,31 +74,62 @@ export const BenefitItem: React.FC<BenefitItemProps> = ({
             <h4 style={{ margin: 0 }}>{displayName}</h4>
             {needsAnniversaryDate(benefit) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Calendar size={14} color="var(--text-muted)" />
-                <input 
-                  type="date" 
-                  value={tempExpirationDate} 
-                  onChange={e => setTempExpirationDate(e.target.value)}
-                  style={{ 
-                    height: '20px', 
-                    padding: '0 4px', 
-                    fontSize: '0.65rem', 
-                    borderRadius: '4px', 
-                    border: `1px solid ${needsInfo ? 'var(--warning)' : 'var(--border-color)'}`,
-                  }}
-                />
-                <button 
-                  onClick={() => {
-                    if (!tempExpirationDate || !onUpdateBenefit) return;
-                    const [year, month, day] = tempExpirationDate.split('-').map(Number);
-                    const localDate = new Date(year, month - 1, day, 12, 0, 0);
-                    onUpdateBenefit(benefit.id, { expirationDate: localDate.toISOString(), isExpirationSet: true });
-                  }}
-                  style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                  title="Save Expiration Date"
-                >
-                  <Check size={14} />
-                </button>
+                {isEditingExpiration || !benefit.isExpirationSet ? (
+                  <>
+                    <Calendar size={14} color="var(--text-muted)" />
+                    <input 
+                      type="date" 
+                      value={tempExpirationDate} 
+                      onChange={e => setTempExpirationDate(e.target.value)}
+                      style={{ 
+                        height: '20px', 
+                        padding: '0 4px', 
+                        fontSize: '0.65rem', 
+                        borderRadius: '4px', 
+                        border: `1px solid ${needsInfo ? 'var(--warning)' : 'var(--border-color)'}`,
+                      }}
+                      autoFocus={isEditingExpiration}
+                    />
+                    <button 
+                      onClick={() => {
+                        if (!tempExpirationDate || !onUpdateBenefit) return;
+                        const [year, month, day] = tempExpirationDate.split('-').map(Number);
+                        const localDate = new Date(year, month - 1, day, 12, 0, 0);
+                        onUpdateBenefit(benefit.id, { expirationDate: localDate.toISOString(), isExpirationSet: true });
+                        setIsEditingExpiration(false);
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                      title="Save Expiration Date"
+                    >
+                      <Check size={14} />
+                    </button>
+                    {benefit.isExpirationSet && (
+                      <button 
+                        onClick={() => {
+                          if (!onUpdateBenefit) return;
+                          onUpdateBenefit(benefit.id, { expirationDate: '', isExpirationSet: false });
+                          setTempExpirationDate('');
+                          setIsEditingExpiration(false);
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                        title="Clear Expiration Date"
+                      >
+                        <CloseIcon size={14} />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <MinimalButton 
+                    onClick={() => {
+                      setIsEditingExpiration(true);
+                      setTempExpirationDate(benefit.expirationDate ? benefit.expirationDate.split('T')[0] : '');
+                    }}
+                    color="var(--primary)"
+                    title={`Expires: ${expiryDate.toLocaleDateString()}`}
+                  >
+                    <Calendar size={14} />
+                  </MinimalButton>
+                )}
               </div>
             )}
           </div>

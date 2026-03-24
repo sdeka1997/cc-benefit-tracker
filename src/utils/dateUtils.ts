@@ -4,13 +4,11 @@ import {
   isAfter,
   addYears,
   addMonths,
-  setYear,
   isBefore,
   parseISO,
   startOfMonth,
   startOfQuarter,
   startOfYear,
-  subYears,
   addQuarters,
   subDays,
   startOfDay,
@@ -39,20 +37,26 @@ export const getPeriodStartDate = (benefit: Benefit, cardAnnualFeeDateStr?: stri
       baseDate = now;
     }
     
-    let date = setYear(baseDate, now.getFullYear());
-    if (isAfter(date, now)) date = subYears(date, 1);
-    
-    // If it's multi-year anniversary, we need to find the specific start of the current multi-year period
     const intervalMonths = benefit.resetIntervalMonths || DEFAULT_INTERVALS.ANNUAL_ROLLING;
-    if (intervalMonths > 12) {
-      // Find how many intervals since baseDate
-      let checkDate = baseDate;
-      while (isBefore(addMonths(checkDate, intervalMonths), now) || addMonths(checkDate, intervalMonths).getTime() === now.getTime()) {
-        checkDate = addMonths(checkDate, intervalMonths);
-      }
-      return checkDate;
+    
+    // Find the current period by finding the earliest anniversary (baseDate + n * interval)
+    // that is >= today (meaning today is the expiration day or before).
+    let checkDate = baseDate;
+    if (isBefore(endOfDay(checkDate), now)) {
+        // Anchor is in the past, move forward to find the NEXT expiration
+        while (isBefore(endOfDay(checkDate), now)) {
+            checkDate = addMonths(checkDate, intervalMonths);
+        }
+    } else {
+        // Anchor is in the future, move backward to find the EARLIEST expiration that is >= now
+        while (isAfter(endOfDay(addMonths(checkDate, -intervalMonths)), now)) {
+            checkDate = addMonths(checkDate, -intervalMonths);
+        }
     }
-    return date;
+    
+    // checkDate is now the expiration date of the current period.
+    // The start date is one interval before that.
+    return addMonths(checkDate, -intervalMonths);
   }
 
   if (frequency === 'interval') {
@@ -108,7 +112,7 @@ export const getPeriodEndDate = (benefit: Benefit, cardAnnualFeeDateStr?: string
       return subDays(addYears(startDate, 1), 1);
     case 'anniversary':
       const interval = benefit.resetIntervalMonths || DEFAULT_INTERVALS.ANNUAL_ROLLING;
-      return subDays(addMonths(startDate, interval), 1);
+      return addMonths(startDate, interval);
     case 'interval':
       if (benefit.usages.length > 0 && benefit.resetIntervalMonths) {
         const lastUsage = benefit.usages.reduce((prev, curr) => 

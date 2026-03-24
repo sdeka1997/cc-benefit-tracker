@@ -101,15 +101,13 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
                         onClick={(isFullyUsed || b.frequency === 'interval') ? undefined : onToggleExpiry}
                       >
                         <Clock size={10} />
-                        {b.frequency === 'interval' 
-                          ? (isFullyUsed 
-                              ? `Available on ${resetDate.toLocaleDateString()}` 
-                              : 'Available now')
-                          : (showGlobalExpiryDate || isFullyUsed) 
-                            ? (isFullyUsed 
-                                ? `Resets ${resetDate.toLocaleDateString()}`
-                                : expiryDate.toLocaleDateString())
-                            : `${daysLeft}d left`
+                        {isFullyUsed 
+                          ? `Available on ${resetDate.toLocaleDateString()}`
+                          : b.frequency === 'interval'
+                            ? 'Available now'
+                            : (showGlobalExpiryDate)
+                              ? expiryDate.toLocaleDateString()
+                              : `${daysLeft}d left`
                         }
                       </span>
                     )}
