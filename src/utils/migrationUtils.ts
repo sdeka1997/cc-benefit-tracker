@@ -116,6 +116,7 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
             resetIntervalMonths: templateBenefit.resetIntervalMonths,
             unit: templateBenefit.unit,
             category: templateBenefit.category,
+            isHidden: templateBenefit.isHidden ?? normalizedB.isHidden,
             // Fallback chain for legacy data recovery for expirationDate and isExpirationSet
             expirationDate: normalizedB.expirationDate || normalizedB.issueDate || (card as any).anniversaryDate || card.annualFeeDate,
             isExpirationSet: normalizedB.isExpirationSet ?? (card as any).isAnniversarySet ?? false

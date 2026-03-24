@@ -9,7 +9,8 @@ const createBenefit = (
   periodType: PeriodType = 'calendar',
   intervalMonths?: number,
   unit: string = '$',
-  issueDate?: string
+  issueDate?: string,
+  isHidden: boolean = false
 ): Benefit => ({
   id: crypto.randomUUID(),
   name,
@@ -23,6 +24,7 @@ const createBenefit = (
   resetIntervalMonths: intervalMonths,
   issueDate,
   unit,
+  isHidden,
 });
 
 export const PREPOPULATED_CARDS: CreditCard[] = [
@@ -113,7 +115,7 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeAmount: 0,
     benefits: [
       createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 200, 'semi_annually', 'Travel', 'calendar'),
-      createBenefit(BENEFIT_NAMES.BILT_CASH, 1000, 'annually', 'Other', 'calendar', 12),
+      createBenefit(BENEFIT_NAMES.BILT_CASH, 1000, 'annually', 'Other', 'calendar', 12, '$', undefined, true),
     ]
   }
 ];
