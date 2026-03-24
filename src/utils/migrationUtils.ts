@@ -65,28 +65,30 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
   // 3. The benefit no longer exists in the current template.
   // 4. The benefit's name is a known standard template benefit name (to protect legacy custom benefits added before 'isCustom' existed).
   if (template) {
-    // Include 'Bilt Cash' explicitly here so it gets cleaned up even though 
-    // it's removed from the main BENEFIT_NAMES constant.
-    const deprecatedNames = ['Bilt Cash'];
-    const knownSystemNames = [...Object.values(BENEFIT_NAMES), ...deprecatedNames].map(n => n.toLowerCase());
+    const knownSystemNames = Object.values(BENEFIT_NAMES).map(n => n.toLowerCase());
     
     benefits = benefits.filter(b => {
-      if (b.isCustom) return true; // Always keep user-added benefits
+      // 1. Always keep benefits explicitly marked as custom
+      if (b.isCustom === true) return true; 
       
       const normalizedName = getDisplayBenefitName(b.name).toLowerCase();
       const existsInTemplate = template.benefits.some(
         tb => getDisplayBenefitName(tb.name).toLowerCase() === normalizedName
       );
       
-      if (existsInTemplate) return true; // Still in template, keep it
+      // 2. If it's in the current template, keep it
+      if (existsInTemplate) return true; 
       
-      // Not in template. Is it a known system benefit?
+      // 3. If it's explicitly marked as NOT custom (i.e. it came from a template)
+      // and it's no longer in that template, it's deprecated. Remove it.
+      if (b.isCustom === false) return false;
+      
+      // 4. Fallback for legacy benefits (isCustom is undefined):
+      // Only remove if it matches a known system benefit name.
       const isKnownSystemBenefit = knownSystemNames.some(kn => normalizedName.includes(kn) || kn.includes(normalizedName));
-      
-      // If it's a known system benefit but missing from the template, it was deprecated. Drop it.
       if (isKnownSystemBenefit) return false;
       
-      // Otherwise, it must be a legacy custom benefit from before we added 'isCustom'. Keep it.
+      // Otherwise, it's likely a legacy custom benefit. Keep it.
       return true;
     });
   }
@@ -117,6 +119,7 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
             resetIntervalMonths: templateBenefit.resetIntervalMonths,
             unit: templateBenefit.unit,
             category: templateBenefit.category,
+            isCustom: false, // Explicitly mark as a system benefit
             // Fallback chain for legacy data recovery for expirationDate and isExpirationSet
             expirationDate: normalizedB.expirationDate || normalizedB.issueDate || (card as any).anniversaryDate || card.annualFeeDate,
             isExpirationSet: normalizedB.isExpirationSet ?? (card as any).isAnniversarySet ?? false
