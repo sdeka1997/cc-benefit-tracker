@@ -3,6 +3,14 @@ import { calculateBenefitMetrics } from './benefitMetrics';
 import { getDisplayCardName } from './stringUtils';
 import { EXPIRY_GROUPS, EXPIRY_ORDER } from '../constants';
 
+export interface AnnualFeeEntry {
+  cardId: string;
+  cardName: string;
+  amount: number;
+  dueDate: Date;
+  daysLeft: number;
+}
+
 export interface GroupedBenefits {
   [key: string]: (Benefit & { cardName: string; cardId: string; annualFeeDate: string })[];
 }
@@ -89,6 +97,46 @@ export const groupBenefitsByCategory = (cards: CreditCard[]): GroupedBenefits =>
   });
 
   return sortedGroups;
+};
+
+export const groupAnnualFeesByExpiry = (cards: CreditCard[]): Record<string, AnnualFeeEntry[]> => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const entries: AnnualFeeEntry[] = cards
+    .filter(card => card.annualFeeAmount > 0 && card.isAnnualFeeDateSet && card.annualFeeDate)
+    .map(card => {
+      const baseDate = new Date(card.annualFeeDate);
+      // Find the next annual occurrence on or after today
+      const nextDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+      while (nextDate < today) {
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+      }
+      const daysLeft = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        cardId: card.id,
+        cardName: getDisplayCardName(card.name, card.issuer),
+        amount: card.annualFeeAmount,
+        dueDate: nextDate,
+        daysLeft,
+      };
+    });
+
+  const groups: Record<string, AnnualFeeEntry[]> = {};
+  entries.forEach(entry => {
+    // Only surface annual fees within 90 days — beyond that it's too far out to act on
+    if (entry.daysLeft > 90) return;
+
+    let group = EXPIRY_GROUPS.SOON;
+    if (entry.daysLeft > 30) group = EXPIRY_GROUPS.QUARTER;
+    else if (entry.daysLeft > 7) group = EXPIRY_GROUPS.MONTH;
+
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(entry);
+  });
+
+  Object.values(groups).forEach(arr => arr.sort((a, b) => a.daysLeft - b.daysLeft));
+  return groups;
 };
 
 export const groupBenefitsByCard = (cards: CreditCard[]): GroupedBenefits => {

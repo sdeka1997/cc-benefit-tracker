@@ -1,11 +1,11 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, CreditCard as CardIcon } from 'lucide-react';
 import { addDays } from 'date-fns';
 import { BenefitItem } from './BenefitItem';
 import { getStatusColor } from '../utils/dateUtils';
 import { calculateBenefitMetrics, needsAnniversaryDate } from '../utils/benefitMetrics';
 import type { Benefit } from '../types/index';
-import type { GroupedBenefits } from '../utils/groupingUtils';
+import type { GroupedBenefits, AnnualFeeEntry } from '../utils/groupingUtils';
 
 interface BenefitGroupProps {
   groupKey: string;
@@ -16,6 +16,7 @@ interface BenefitGroupProps {
   showGlobalExpiryDate: boolean;
   onToggleExpiry: () => void;
   hideCardLabel: boolean;
+  annualFees?: AnnualFeeEntry[];
   onAddUsage: (cardId: string, bId: string, amt: number, desc: string, date: string) => void;
   onDeleteUsage: (cardId: string, bId: string, uId: string) => void;
   onUpdateBenefit: (cardId: string, bId: string, updates: Partial<Benefit>) => void;
@@ -30,6 +31,7 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
   showGlobalExpiryDate,
   onToggleExpiry,
   hideCardLabel,
+  annualFees,
   onAddUsage,
   onDeleteUsage,
   onUpdateBenefit
@@ -56,7 +58,7 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={onToggle}>
           {isCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
           <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{groupName}</span>
-          {groupName !== 'Fully Used' && (
+          {groupName !== 'Fully Used' && benefits.length > 0 && (
             <span className="badge" style={{ backgroundColor: getHeaderStatusColor(), color: 'var(--text-main)', border: 'none', fontWeight: 'bold' }}>
               ${groupRemaining.toFixed(2)} remaining
             </span>
@@ -96,12 +98,12 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
           ) : (
             // Standard flat grouping for others
             benefits.map(b => (
-              <BenefitCard 
-                key={b.id} 
-                b={b} 
-                hideCardLabel={hideCardLabel} 
-                isByExpiry={isByExpiry} 
-                showGlobalExpiryDate={showGlobalExpiryDate} 
+              <BenefitCard
+                key={b.id}
+                b={b}
+                hideCardLabel={hideCardLabel}
+                isByExpiry={isByExpiry}
+                showGlobalExpiryDate={showGlobalExpiryDate}
                 onToggleExpiry={onToggleExpiry}
                 onAddUsage={onAddUsage}
                 onDeleteUsage={onDeleteUsage}
@@ -109,8 +111,55 @@ export const BenefitGroup: React.FC<BenefitGroupProps> = ({
               />
             ))
           )}
+          {annualFees && annualFees.map(fee => (
+            <AnnualFeeCard
+              key={`fee-${fee.cardId}`}
+              fee={fee}
+              showGlobalExpiryDate={showGlobalExpiryDate}
+              onToggleExpiry={onToggleExpiry}
+            />
+          ))}
         </div>
       )}
+    </div>
+  );
+};
+
+interface AnnualFeeCardProps {
+  fee: AnnualFeeEntry;
+  showGlobalExpiryDate: boolean;
+  onToggleExpiry: () => void;
+}
+
+const AnnualFeeCard: React.FC<AnnualFeeCardProps> = ({ fee, showGlobalExpiryDate, onToggleExpiry }) => {
+  const statusColor = getStatusColor(fee.daysLeft, false);
+
+  return (
+    <div className="card" style={{
+      padding: '1rem',
+      border: '1px solid rgba(245, 158, 11, 0.3)',
+      backgroundColor: 'rgba(245, 158, 11, 0.04)',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{fee.cardName}</div>
+        <span
+          className="badge"
+          style={{ color: statusColor, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', cursor: 'pointer', userSelect: 'none' }}
+          onClick={onToggleExpiry}
+        >
+          <Clock size={10} />
+          {showGlobalExpiryDate ? fee.dueDate.toLocaleDateString() : `${fee.daysLeft}d left`}
+        </span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <CardIcon size={14} color="var(--text-muted)" />
+          <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>Annual Fee</span>
+        </div>
+        <span style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-main)' }}>
+          ${fee.amount}
+        </span>
+      </div>
     </div>
   );
 };
