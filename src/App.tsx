@@ -8,7 +8,7 @@ import { AddCardModal } from './components/AddCardModal';
 import { useCreditCards } from './hooks/useCreditCards';
 import { useCloudSync } from './hooks/useCloudSync';
 import { calculateDashboardStats } from './utils/statsUtils';
-import { groupBenefitsByExpiry, groupBenefitsByCategory, groupBenefitsByCard } from './utils/groupingUtils';
+import { groupBenefitsByExpiry, groupBenefitsByCategory, groupBenefitsByCard, groupAnnualFeesByExpiry } from './utils/groupingUtils';
 import { TABS } from './constants';
 import type { TabType } from './constants';
 import './styles/App.css';
@@ -79,6 +79,11 @@ function App() {
     return {};
   }, [activeTab, cards]);
 
+  const annualFeeGroups = useMemo(() => {
+    if (activeTab === TABS.EXPIRING) return groupAnnualFeesByExpiry(cards);
+    return {};
+  }, [activeTab, cards]);
+
   if (!user && syncStatus !== 'loading') {
     return (
       <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
@@ -136,17 +141,27 @@ function App() {
       );
     }
 
-    return Object.entries(groupedBenefits).map(([groupKey, benefits]) => (
+    // For the expiring tab, also collect any groups that only have annual fees (no benefits)
+    const allGroupKeys = activeTab === TABS.EXPIRING
+      ? [...new Set([...Object.keys(groupedBenefits), ...Object.keys(annualFeeGroups)])]
+          .sort((a, b) => {
+            const order = ['Expiring within 7 days', 'Expiring within 30 days', 'Expiring within 90 days', 'Later', 'Fully Used'];
+            return order.indexOf(a) - order.indexOf(b);
+          })
+      : Object.keys(groupedBenefits);
+
+    return allGroupKeys.map(groupKey => (
       <BenefitGroup
         key={groupKey}
         groupKey={groupKey}
-        benefits={benefits}
+        benefits={groupedBenefits[groupKey] || []}
         isCollapsed={collapsedGroups[groupKey] || false}
         onToggle={() => toggleGroup(groupKey)}
         isByExpiry={activeTab === TABS.EXPIRING}
         showGlobalExpiryDate={settings.showGlobalExpiryDate}
         onToggleExpiry={toggleExpiryDisplay}
         hideCardLabel={false}
+        annualFees={activeTab === TABS.EXPIRING && groupKey !== 'Fully Used' ? annualFeeGroups[groupKey] : undefined}
         onAddUsage={addUsage}
         onDeleteUsage={deleteUsage}
         onUpdateBenefit={updateBenefit}
