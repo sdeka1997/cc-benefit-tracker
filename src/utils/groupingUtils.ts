@@ -127,7 +127,7 @@ export const groupAnnualFeesByExpiry = (cards: CreditCard[]): Record<string, Ann
     // Only surface annual fees within 90 days — beyond that it's too far out to act on
     if (entry.daysLeft > 90) return;
 
-    let group = EXPIRY_GROUPS.SOON;
+    let group: string = EXPIRY_GROUPS.SOON;
     if (entry.daysLeft > 30) group = EXPIRY_GROUPS.QUARTER;
     else if (entry.daysLeft > 7) group = EXPIRY_GROUPS.MONTH;
 
