@@ -1,13 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  signInAnonymously, 
-  onAuthStateChanged, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut 
+import {
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut
 } from "firebase/auth";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, deleteDoc, query, serverTimestamp, writeBatch } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBWnLhou3UvGAcJXLG3aql_nrF9UaTY9ZU",
@@ -23,15 +24,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const functions = getFunctions(app);
 export const googleProvider = new GoogleAuthProvider();
 
-export { 
-  signInAnonymously, 
-  onAuthStateChanged, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  onSnapshot, 
-  signInWithPopup, 
-  signOut 
+export {
+  signInAnonymously,
+  onAuthStateChanged,
+  doc,
+  setDoc,
+  getDoc,
+  onSnapshot,
+  signInWithPopup,
+  signOut,
+  collection,
+  addDoc,
+  deleteDoc,
+  query,
+  serverTimestamp,
+  writeBatch,
+  httpsCallable,
 };

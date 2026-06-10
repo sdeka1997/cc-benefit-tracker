@@ -1,6 +1,15 @@
 export type ResetFrequency = 'monthly' | 'quarterly' | 'semi_annually' | 'annually' | 'anniversary' | 'interval';
 export type PeriodType = 'calendar' | 'rolling';
 
+export type DetectionType = 'statement_credit' | 'merchant_match' | 'manual';
+
+export interface BenefitDetection {
+  type: DetectionType;
+  merchantKeywords?: string[];
+  descriptionKeywords?: string[];
+  amountRange?: { min?: number; max?: number };
+}
+
 export interface BenefitUsage {
   id: string;
   amount: number;
@@ -25,6 +34,31 @@ export interface Benefit {
   unit?: string; // '$' (default), 'passes', 'miles', etc.
   isHidden?: boolean; // Whether the benefit is hidden from the UI tabs
   isCustom?: boolean; // Whether the benefit was manually added by the user
+  detection?: BenefitDetection;
+}
+
+export interface PendingTransaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  accountName: string;
+  accountId: string;
+  institutionName: string;
+  tellerTxId: string;
+  status: string;
+  type: string | null;
+  suggestedCardId?: string;
+  suggestedCardName?: string;
+  suggestedBenefitId?: string;
+  suggestedBenefitName?: string;
+  addedAt?: unknown;
+}
+
+export interface TellerAccount {
+  id: string;
+  name: string;
+  last4?: string;
 }
 
 export interface CreditCard {
