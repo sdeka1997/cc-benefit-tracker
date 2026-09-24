@@ -1,73 +1,39 @@
-# React + TypeScript + Vite
+# Credit Card Benefit Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Premium credit cards carry recurring credits — travel, dining, hotel, Global Entry — that quietly
+expire if you don't use them. This tracks what's left on each one and how long you have.
 
-Currently, two official plugins are available:
+The hard part isn't the tracking, it's the calendar: credits reset on different schedules, and
+some reset on your **account anniversary** rather than the calendar year. A card you opened in
+March has a different clock than one you opened in September.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+- **Every benefit has its own reset clock** — monthly, quarterly, semi-annual, or annual, on
+  either a calendar period or an anniversary-anchored one, with custom intervals where a card
+  needs them.
+- **Grouped the way you'd actually ask about it** — by what expires soonest, by category, or by
+  card.
+- **Partial usage**, so a $300 travel credit drawn down $85 at a time shows what's actually left.
+- **Prepopulated card library** so adding a card doesn't mean entering fifteen benefits by hand.
+- **Annual fee tracking** against the account anniversary, alongside the benefits it pays for.
+- **Lifetime savings** — what you've actually pulled out of the cards you carry.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Built with
 
-## Expanding the ESLint configuration
+React + TypeScript + Vite · Firebase Auth (Google) · Firestore · deployed to GitHub Pages via
+Actions
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Signing in with Google persists your cards to Firestore and keeps them live across devices via
+snapshot listeners; a new sign-in adopts whatever you'd already entered in the session. Benefit
+templates are normalized on every load, so when a card's benefits are renamed or removed
+upstream, existing user data is migrated rather than orphaned.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Running it
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The Firebase web config is checked in, so there's nothing to configure locally.
