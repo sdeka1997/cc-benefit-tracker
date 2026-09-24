@@ -158,6 +158,11 @@ export const useCloudSync = (
   const logout = async () => {
     try {
       await signOut(auth);
+      // Drop the signed-out account's cards from this browser. They are safe in
+      // Firestore, and leaving them behind would let the next person to sign in
+      // on this device inherit them -- and, if that account has no cloud doc yet,
+      // have them pushed up as their own.
+      setLocalCards([]);
     } catch (err) {
       console.error("Logout failed:", err);
     }

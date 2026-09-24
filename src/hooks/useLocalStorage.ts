@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   // Get from local storage then parse stored json or return initialValue
@@ -18,17 +18,17 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
   const [storedValue, setStoredValue] = useState<T>(readValue);
 
-  const setValue = (value: T | ((val: T) => T)) => {
+  // Persist on change rather than inside the setter, so callers keep React's real
+  // setState — a setter that resolved `prev => ...` against a closed-over value
+  // would drop updates whenever two of them batched into the same render.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      }
+      window.localStorage.setItem(key, JSON.stringify(storedValue));
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error);
     }
-  };
+  }, [key, storedValue]);
 
-  return [storedValue, setValue] as const;
+  return [storedValue, setStoredValue] as const;
 }

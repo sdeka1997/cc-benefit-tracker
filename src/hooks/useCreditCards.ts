@@ -1,10 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useLocalStorage } from './useLocalStorage';
 import type { CreditCard, Benefit, BenefitUsage, ResetFrequency, PeriodType } from '../types/index';
 import { normalizeCard } from '../utils/migrationUtils';
 import { getDisplayBenefitName } from '../utils/stringUtils';
 
+const STORAGE_KEY = 'cc-benefit-tracker:cards';
+
 export const useCreditCards = () => {
-  const [storedCards, setStoredCards] = useState<CreditCard[]>([]);
+  // Persisted locally so a refresh doesn't wipe unsynced work; signing in
+  // reconciles this with Firestore (see useCloudSync).
+  const [storedCards, setStoredCards] = useLocalStorage<CreditCard[]>(STORAGE_KEY, []);
   
   // Normalize data only when storedCards changes to prevent infinite loops
   const cards = useMemo(() => storedCards.map(normalizeCard), [storedCards]);
