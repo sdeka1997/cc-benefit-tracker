@@ -4,7 +4,9 @@ import { BenefitGroup } from './components/BenefitGroup';
 import { HeaderStats } from './components/HeaderStats';
 import { NavigationTabs } from './components/NavigationTabs';
 import { ProfileView } from './components/ProfileView';
+import { SyncTab } from './components/SyncTab';
 import { AddCardModal } from './components/AddCardModal';
+import { usePendingTransactions } from './hooks/usePendingTransactions';
 import { useCreditCards } from './hooks/useCreditCards';
 import { useCloudSync } from './hooks/useCloudSync';
 import { calculateDashboardStats } from './utils/statsUtils';
@@ -29,6 +31,7 @@ function App() {
   } = useCreditCards();
 
   const { user, settings, syncStatus, loginWithGoogle, logout, updateSettings } = useCloudSync(storedCards, setStoredCards);
+  const { pending } = usePendingTransactions(user?.uid);
 
   // Auto-persist normalized changes back to stored state
   // This ensures that template updates (e.g. benefit removal/renaming) are pushed to the cloud
@@ -121,7 +124,7 @@ function App() {
   const renderContent = () => {
     if (activeTab === TABS.PROFILE) {
       return (
-        <ProfileView 
+        <ProfileView
           cards={cards}
           onDeleteCard={deleteCard}
           onUpdateAnnualFeeDate={updateAnnualFeeDate}
@@ -129,6 +132,16 @@ function App() {
           onAddBenefit={addBenefit}
           onUpdateBenefit={updateBenefit}
           setIsModalOpen={setIsModalOpen}
+        />
+      );
+    }
+
+    if (activeTab === TABS.SYNC) {
+      return (
+        <SyncTab
+          uid={user!.uid}
+          cards={cards}
+          onAddUsage={addUsage}
         />
       );
     }
@@ -198,9 +211,9 @@ function App() {
         </div>
       </header>
 
-      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <NavigationTabs activeTab={activeTab} setActiveTab={setActiveTab} pendingCount={pending.length} />
 
-      {activeTab !== TABS.PROFILE && (
+      {activeTab !== TABS.PROFILE && activeTab !== TABS.SYNC && (
         <HeaderStats 
           lifetimeSavings={stats.lifetimeSavings}
           availableToday={stats.availableToday}

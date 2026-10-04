@@ -1,15 +1,16 @@
-import type { CreditCard, Benefit, PeriodType, ResetFrequency } from '../types/index';
+import type { CreditCard, Benefit, BenefitDetection, PeriodType, ResetFrequency } from '../types/index';
 import { BENEFIT_NAMES, DEFAULT_INTERVALS } from '../constants';
 
 const createBenefit = (
-  name: string, 
-  amount: number, 
-  frequency: ResetFrequency, 
-  category: string, 
+  name: string,
+  amount: number,
+  frequency: ResetFrequency,
+  category: string,
   periodType: PeriodType = 'calendar',
   intervalMonths?: number,
   unit: string = '$',
-  issueDate?: string
+  issueDate?: string,
+  detection?: BenefitDetection,
 ): Benefit => ({
   id: crypto.randomUUID(),
   name,
@@ -23,6 +24,7 @@ const createBenefit = (
   resetIntervalMonths: intervalMonths,
   issueDate,
   unit,
+  detection,
 });
 
 export const PREPOPULATED_CARDS: CreditCard[] = [
@@ -33,11 +35,16 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 0,
     benefits: [
-      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 300, 'annually', 'Lodging', 'calendar'),
-      createBenefit(BENEFIT_NAMES.SPLURGE_CREDIT, 200, 'annually', 'Shopping', 'calendar'),
-      createBenefit(BENEFIT_NAMES.BLACKLANE_CREDIT, 100, 'semi_annually', 'Travel Credit', 'calendar'),
-      createBenefit(BENEFIT_NAMES.ADMIRALS_CLUB_PASSES, 4, 'annually', 'Air Travel', 'calendar', undefined, 'passes'),
-      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 300, 'annually', 'Lodging', 'calendar', undefined, '$', undefined,
+        { type: 'statement_credit', amountRange: { min: 1, max: 300 } }),
+      createBenefit(BENEFIT_NAMES.SPLURGE_CREDIT, 200, 'annually', 'Shopping', 'calendar', undefined, '$', undefined,
+        { type: 'statement_credit', amountRange: { min: 1, max: 200 } }),
+      createBenefit(BENEFIT_NAMES.BLACKLANE_CREDIT, 100, 'semi_annually', 'Travel Credit', 'calendar', undefined, '$', undefined,
+        { type: 'merchant_match', merchantKeywords: ['blacklane'] }),
+      createBenefit(BENEFIT_NAMES.ADMIRALS_CLUB_PASSES, 4, 'annually', 'Air Travel', 'calendar', undefined, 'passes', undefined,
+        { type: 'manual' }),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY, '$', undefined,
+        { type: 'statement_credit', descriptionKeywords: ['global entry', 'tsa precheck', 'nexus', 'trusted traveler'], amountRange: { min: 78, max: 200 } }),
     ]
   },
   {
@@ -47,7 +54,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 0,
     benefits: [
-      createBenefit(BENEFIT_NAMES.INSTACART_CREDIT, 20, 'monthly', 'Dining', 'calendar'),
+      createBenefit(BENEFIT_NAMES.INSTACART_CREDIT, 20, 'monthly', 'Dining', 'calendar', undefined, '$', undefined,
+        { type: 'merchant_match', merchantKeywords: ['instacart'] }),
     ]
   },
   {
@@ -57,7 +65,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 95,
     benefits: [
-      createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'monthly', 'Dining', 'calendar'),
+      createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'monthly', 'Dining', 'calendar', undefined, '$', undefined,
+        { type: 'merchant_match', merchantKeywords: ['doordash', 'dd *'] }),
     ]
   },
   {
@@ -67,7 +76,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 0,
     benefits: [
-      createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'quarterly', 'Dining', 'calendar'),
+      createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'quarterly', 'Dining', 'calendar', undefined, '$', undefined,
+        { type: 'merchant_match', merchantKeywords: ['doordash', 'dd *'] }),
     ]
   },
   {
@@ -77,8 +87,10 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 395,
     benefits: [
-      createBenefit(BENEFIT_NAMES.TRAVEL_CREDIT, 300, 'anniversary', 'Travel Credit', 'rolling', DEFAULT_INTERVALS.ANNUAL_ROLLING),
-      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+      createBenefit(BENEFIT_NAMES.TRAVEL_CREDIT, 300, 'anniversary', 'Travel Credit', 'rolling', DEFAULT_INTERVALS.ANNUAL_ROLLING, '$', undefined,
+        { type: 'statement_credit', amountRange: { min: 1, max: 300 } }),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY, '$', undefined,
+        { type: 'statement_credit', descriptionKeywords: ['global entry', 'tsa precheck', 'nexus', 'trusted traveler'], amountRange: { min: 78, max: 200 } }),
     ]
   },
   {
@@ -88,10 +100,14 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 95,
     benefits: [
-      createBenefit(BENEFIT_NAMES.ALASKA_LOUNGE_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes'),
-      createBenefit(BENEFIT_NAMES.ALASKA_WIFI_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes'),
-      createBenefit(BENEFIT_NAMES.COMPANION_AWARD, 1, 'anniversary', 'Air Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
-      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+      createBenefit(BENEFIT_NAMES.ALASKA_LOUNGE_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes', undefined,
+        { type: 'manual' }),
+      createBenefit(BENEFIT_NAMES.ALASKA_WIFI_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes', undefined,
+        { type: 'manual' }),
+      createBenefit(BENEFIT_NAMES.COMPANION_AWARD, 1, 'anniversary', 'Air Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes', undefined,
+        { type: 'manual' }),
+      createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY, '$', undefined,
+        { type: 'statement_credit', descriptionKeywords: ['global entry', 'tsa precheck', 'nexus', 'trusted traveler'], amountRange: { min: 78, max: 200 } }),
     ]
   },
   {
@@ -101,8 +117,10 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 95,
     benefits: [
-      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 50, 'anniversary', 'Lodging', 'rolling', 12),
-      createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'monthly', 'Dining', 'calendar'),
+      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 50, 'anniversary', 'Lodging', 'rolling', 12, '$', undefined,
+        { type: 'statement_credit', amountRange: { min: 1, max: 50 } }),
+      createBenefit(BENEFIT_NAMES.DOORDASH_CREDIT, 10, 'monthly', 'Dining', 'calendar', undefined, '$', undefined,
+        { type: 'merchant_match', merchantKeywords: ['doordash', 'dd *'] }),
     ]
   },
   {
@@ -112,7 +130,8 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
     annualFeeDate: new Date().toISOString(),
     annualFeeAmount: 0,
     benefits: [
-      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 200, 'semi_annually', 'Lodging', 'calendar'),
+      createBenefit(BENEFIT_NAMES.HOTEL_CREDIT, 200, 'semi_annually', 'Lodging', 'calendar', undefined, '$', undefined,
+        { type: 'statement_credit', amountRange: { min: 1, max: 200 } }),
     ]
   }
 ];

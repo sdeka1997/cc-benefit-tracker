@@ -73,6 +73,7 @@ export const TABS = {
   EXPIRING: 'expiring',
   CATEGORY: 'category',
   CARDS: 'cards',
+  SYNC: 'sync',
   PROFILE: 'profile',
 } as const;
 
