@@ -36,6 +36,7 @@ export interface CreditCard {
   annualFeeDate: string;
   annualFeeAmount: number;
   isAnnualFeeDateSet?: boolean; // Track if user has explicitly set this
+  closedDate?: string; // Set when the card is canceled; stops fees and recurring perks
 }
 
 export interface UserSettings {

@@ -19,6 +19,8 @@ function App() {
     storedCards,
     setStoredCards,
     deleteCard, 
+    closeCard,
+    reopenCard,
     updateAnnualFeeDate, 
     deleteAnniversary, 
     syncCards, 
@@ -124,6 +126,8 @@ function App() {
         <ProfileView 
           cards={cards}
           onDeleteCard={deleteCard}
+          onCloseCard={closeCard}
+          onReopenCard={reopenCard}
           onUpdateAnnualFeeDate={updateAnnualFeeDate}
           onDeleteAnniversary={deleteAnniversary}
           onAddBenefit={addBenefit}

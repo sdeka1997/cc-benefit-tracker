@@ -1,6 +1,7 @@
 import type { CreditCard, Benefit } from '../types/index';
 import { calculateBenefitMetrics } from './benefitMetrics';
 import { getDisplayCardName } from './stringUtils';
+import { isBenefitAvailable } from './cardStatus';
 import { EXPIRY_GROUPS, EXPIRY_ORDER } from '../constants';
 
 export interface AnnualFeeEntry {
@@ -24,7 +25,7 @@ const sortBenefitsByName = (a: Benefit, b: Benefit) => {
 
 export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
   const allBenefits = cards.flatMap(card => card.benefits
-    .filter(b => !b.isHidden)
+    .filter(b => !b.isHidden && isBenefitAvailable(card, b))
     .map(b => ({ 
       ...b, 
       cardName: getDisplayCardName(card.name, card.issuer), 
@@ -69,7 +70,7 @@ export const groupBenefitsByExpiry = (cards: CreditCard[]): GroupedBenefits => {
 
 export const groupBenefitsByCategory = (cards: CreditCard[]): GroupedBenefits => {
   const allBenefits = cards.flatMap(card => card.benefits
-    .filter(b => !b.isHidden)
+    .filter(b => !b.isHidden && isBenefitAvailable(card, b))
     .map(b => ({ 
       ...b, 
       cardName: getDisplayCardName(card.name, card.issuer), 
@@ -104,7 +105,7 @@ export const groupAnnualFeesByExpiry = (cards: CreditCard[]): Record<string, Ann
   today.setHours(0, 0, 0, 0);
 
   const entries: AnnualFeeEntry[] = cards
-    .filter(card => card.annualFeeAmount > 0 && card.isAnnualFeeDateSet && card.annualFeeDate)
+    .filter(card => !card.closedDate && card.annualFeeAmount > 0 && card.isAnnualFeeDateSet && card.annualFeeDate)
     .map(card => {
       const baseDate = new Date(card.annualFeeDate);
       // Find the next annual occurrence on or after today
@@ -153,7 +154,7 @@ export const groupBenefitsByCard = (cards: CreditCard[]): GroupedBenefits => {
     
     // Sort benefits within this card alphabetically by name
     const activeBenefits = card.benefits
-      .filter(b => !b.isHidden)
+      .filter(b => !b.isHidden && isBenefitAvailable(card, b))
       .map(b => ({ 
         ...b, 
         cardName: displayName, 
