@@ -82,6 +82,7 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
 
   // 3. TEMPLATE SYNC (Master List Logic)
   // We reconstruct the benefit list based on the template.
+  const matchedIds = new Set<string>();
   const syncedBenefits = template.benefits.map(templateBenefit => {
     const templateName = templateBenefit.name.toLowerCase();
     
@@ -93,6 +94,7 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
     });
 
     if (existingBenefit) {
+      matchedIds.add(existingBenefit.id);
       // MERGE: Keep user data (id, usages, expiration), take configuration from template
       return {
         ...existingBenefit,
@@ -114,6 +116,12 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
     return { ...templateBenefit, isCustom: false };
   });
 
+  // Keep stored benefits this template doesn't know about instead of dropping them.
+  // A client running an older template (e.g. a stale tab of the deployed app) would
+  // otherwise delete benefits added in a newer version and sync the deletion to the
+  // cloud. They stay in the data but are not displayed (see isBenefitAvailable).
+  const unmatchedBenefits = card.benefits.filter(b => !matchedIds.has(b.id));
+
   // 4. Return the card fully synchronized with its template
   return {
     ...card,
@@ -123,6 +131,6 @@ export const normalizeCard = (card: CreditCard): CreditCard => {
     annualFeeAmount: template.annualFeeAmount,
     annualFeeDate,
     isAnnualFeeDateSet,
-    benefits: syncedBenefits
+    benefits: [...syncedBenefits, ...unmatchedBenefits]
   };
 };

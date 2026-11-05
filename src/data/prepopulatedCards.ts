@@ -91,7 +91,18 @@ export const PREPOPULATED_CARDS: CreditCard[] = [
       createBenefit(BENEFIT_NAMES.ALASKA_LOUNGE_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes'),
       createBenefit(BENEFIT_NAMES.ALASKA_WIFI_PASSES, 2, 'quarterly', 'Air Travel', 'calendar', undefined, 'passes'),
       createBenefit(BENEFIT_NAMES.COMPANION_AWARD, 1, 'anniversary', 'Air Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
+      createBenefit(BENEFIT_NAMES.COMPANION_AWARD_100K, 1, 'anniversary', 'Air Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
       createBenefit(BENEFIT_NAMES.GLOBAL_ENTRY, 120, 'interval', 'Air Travel', 'rolling', DEFAULT_INTERVALS.GLOBAL_ENTRY),
+    ]
+  },
+  {
+    id: 'atmos-ascent',
+    name: 'Atmos Rewards Ascent (Alaska Airlines)',
+    issuer: 'Bank of America',
+    annualFeeDate: new Date().toISOString(),
+    annualFeeAmount: 95,
+    benefits: [
+      createBenefit(BENEFIT_NAMES.COMPANION_FARE, 1, 'anniversary', 'Air Travel', 'rolling', DEFAULT_INTERVALS.COMPANION_AWARD, 'passes'),
     ]
   },
   {

@@ -15,6 +15,8 @@ export const KPI_COLORS = {
 
 export const BENEFIT_NAMES = {
   COMPANION_AWARD: '25K Companion Award',
+  COMPANION_AWARD_100K: '100K Companion Award',
+  COMPANION_FARE: 'Companion Fare',
   GLOBAL_ENTRY: 'Global Entry / TSA PreCheck',
   TRAVEL_CREDIT: 'Travel Credit',
   HOTEL_CREDIT: 'Hotel Credit',

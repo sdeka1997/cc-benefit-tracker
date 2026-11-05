@@ -45,6 +45,23 @@ export const useCreditCards = () => {
     }));
   };
 
+  const closeCard = (cardId: string, closedDate: string) => {
+    const [year, month, day] = closedDate.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 12, 0, 0);
+    setStoredCards(prev => prev.map(card =>
+      card.id === cardId ? { ...card, closedDate: localDate.toISOString() } : card
+    ));
+  };
+
+  const reopenCard = (cardId: string) => {
+    setStoredCards(prev => prev.map(card => {
+      if (card.id !== cardId) return card;
+      const reopened = { ...card };
+      delete reopened.closedDate;
+      return reopened;
+    }));
+  };
+
   const syncCards = (updatedCards: CreditCard[]) => {
     setStoredCards(updatedCards);
   };
@@ -154,6 +171,8 @@ export const useCreditCards = () => {
     setCards,
     setStoredCards,
     deleteCard,
+    closeCard,
+    reopenCard,
     updateAnnualFeeDate,
     deleteAnniversary: handleDeleteAnniversary,
     syncCards,

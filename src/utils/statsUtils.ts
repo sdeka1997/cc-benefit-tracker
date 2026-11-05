@@ -1,5 +1,6 @@
 import type { CreditCard } from '../types/index';
 import { calculateBenefitMetrics } from './benefitMetrics';
+import { isBenefitAvailable } from './cardStatus';
 
 export interface DashboardStats {
   lifetimeSavings: number;
@@ -15,6 +16,7 @@ export const calculateDashboardStats = (cards: CreditCard[]): DashboardStats => 
 
   const availableToday = cards.reduce((acc, card) => 
     acc + card.benefits.reduce((bAcc, b) => {
+      if (!isBenefitAvailable(card, b)) return bAcc;
       const isMonetary = !b.unit || b.unit === '$';
       if (!isMonetary) return bAcc;
       const { remaining } = calculateBenefitMetrics(b, card.annualFeeDate);
@@ -22,7 +24,7 @@ export const calculateDashboardStats = (cards: CreditCard[]): DashboardStats => 
     }, 0), 0
   );
 
-  const allBenefits = cards.flatMap(card => card.benefits.map(b => ({ 
+  const allBenefits = cards.flatMap(card => card.benefits.filter(b => isBenefitAvailable(card, b)).map(b => ({ 
     ...b, 
     annualFeeDate: card.annualFeeDate 
   })));

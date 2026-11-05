@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Plus, Trash, Calendar, Check, X as CloseIcon, AlertCircle, X } from 'lucide-react';
+import { Plus, Trash, Calendar, Check, X as CloseIcon, AlertCircle, X, Ban, RotateCcw } from 'lucide-react';
 import type { CreditCard, ResetFrequency, PeriodType, Benefit } from '../types/index';
 import { getDisplayCardName } from '../utils/stringUtils';
 import { MinimalButton } from './MinimalButton';
 import { FLAGS } from '../config';
 import { STATUS_COLORS, RESET_TYPES } from '../constants';
+import { isBenefitAvailable } from '../utils/cardStatus';
 
 interface CardManagementItemProps {
   card: CreditCard;
   onDeleteCard: (id: string) => void;
+  onCloseCard: (id: string, date: string) => void;
+  onReopenCard: (id: string) => void;
   onUpdateAnnualFeeDate: (id: string, date: string) => void;
   onDeleteAnniversary: (id: string) => void;
   onAddBenefit: (cardId: string, name: string, amount: number, freq: ResetFrequency, period: PeriodType, interval?: number, issueDate?: string) => void;
@@ -20,6 +23,8 @@ interface CardManagementItemProps {
 const CardManagementItem: React.FC<CardManagementItemProps> = ({
   card,
   onDeleteCard,
+  onCloseCard,
+  onReopenCard,
   onUpdateAnnualFeeDate,
   onDeleteAnniversary,
   onAddBenefit,
@@ -37,11 +42,16 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
   const [newBIntervalMonths, setNewBIntervalMonths] = useState<string>('48');
   const [newBIssueDate, setNewBIssueDate] = useState<string>('');
 
+  const [isClosingCard, setIsClosingCard] = useState(false);
+  const [tempClosedDate, setTempClosedDate] = useState(new Date().toLocaleDateString('en-CA'));
+
   const selectedResetType = RESET_TYPES.find(t => t.id === newBResetTypeId) || RESET_TYPES[3];
-  const cardNeedsInfo = card.annualFeeAmount > 0 && !card.isAnnualFeeDateSet;
+  const isClosed = !!card.closedDate;
+  const cardNeedsInfo = !isClosed && card.annualFeeAmount > 0 && !card.isAnnualFeeDateSet;
+  const listedBenefits = card.benefits.filter(b => isBenefitAvailable(card, b));
 
   return (
-    <div className={`card ${cardNeedsInfo ? 'needs-info' : ''}`} style={{ padding: '1.5rem' }}>
+    <div className={`card ${cardNeedsInfo ? 'needs-info' : ''}`} style={{ padding: '1.5rem', opacity: isClosed ? 0.75 : 1 }}>
       {cardNeedsInfo && (
         <div style={{ 
           display: 'flex', 
@@ -63,7 +73,12 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <h3 style={{ margin: 0 }}>{getDisplayCardName(card.name, card.issuer)}</h3>
-            {card.annualFeeAmount > 0 && (
+            {isClosed && (
+              <span className="badge" style={{ padding: '2px 8px', fontSize: '0.75rem', backgroundColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+                Closed {new Date(card.closedDate!).toLocaleDateString()}
+              </span>
+            )}
+            {!isClosed && card.annualFeeAmount > 0 && (
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 {isEditingAnniversary || !card.isAnnualFeeDateSet ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -132,15 +147,57 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
             )}
           </div>
         </div>
-        <button onClick={() => onDeleteCard(card.id)} className="btn-outline" style={{ color: STATUS_COLORS.DANGER, padding: '6px', cursor: 'pointer' }}>
-          <Trash size={18} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {isClosed ? (
+            <button onClick={() => onReopenCard(card.id)} className="btn-outline" style={{ padding: '6px', cursor: 'pointer', display: 'flex' }} title="Reopen card">
+              <RotateCcw size={18} />
+            </button>
+          ) : isClosingCard ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Closed on</span>
+              <input
+                type="date"
+                value={tempClosedDate}
+                onChange={e => setTempClosedDate(e.target.value)}
+                style={{ height: '24px', padding: '0 4px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+              />
+              <MinimalButton
+                onClick={() => {
+                  if (!tempClosedDate) return;
+                  onCloseCard(card.id, tempClosedDate);
+                  setIsClosingCard(false);
+                }}
+                color="var(--success)"
+                title="Confirm close"
+              >
+                <Check size={16} />
+              </MinimalButton>
+              <MinimalButton onClick={() => setIsClosingCard(false)} color={STATUS_COLORS.MUTED} title="Cancel">
+                <CloseIcon size={16} />
+              </MinimalButton>
+            </div>
+          ) : (
+            <button onClick={() => setIsClosingCard(true)} className="btn-outline" style={{ padding: '6px', cursor: 'pointer', display: 'flex' }} title="Mark card as closed">
+              <Ban size={18} />
+            </button>
+          )}
+          <button onClick={() => onDeleteCard(card.id)} className="btn-outline" style={{ color: STATUS_COLORS.DANGER, padding: '6px', cursor: 'pointer' }}>
+            <Trash size={18} />
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Benefits ({card.benefits.length})</h4>
+        <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+          {isClosed ? 'Still active' : 'Benefits'} ({listedBenefits.length})
+        </h4>
+        {isClosed && listedBenefits.length === 0 && (
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+            Nothing left on this card. You can delete it.
+          </p>
+        )}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-          {card.benefits.map(b => (
+          {listedBenefits.map(b => (
             <button 
               key={b.id} 
               className="badge" 
@@ -266,6 +323,8 @@ const CardManagementItem: React.FC<CardManagementItemProps> = ({
 interface ProfileViewProps {
   cards: CreditCard[];
   onDeleteCard: (id: string) => void;
+  onCloseCard: (id: string, date: string) => void;
+  onReopenCard: (id: string) => void;
   onUpdateAnnualFeeDate: (id: string, date: string) => void;
   onDeleteAnniversary: (id: string) => void;
   onAddBenefit: (cardId: string, name: string, amount: number, freq: ResetFrequency, period: PeriodType, interval?: number, issueDate?: string) => void;
@@ -276,6 +335,8 @@ interface ProfileViewProps {
 export const ProfileView: React.FC<ProfileViewProps> = ({
   cards,
   onDeleteCard,
+  onCloseCard,
+  onReopenCard,
   onUpdateAnnualFeeDate,
   onDeleteAnniversary,
   onAddBenefit,
@@ -301,8 +362,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {[...cards].sort((a, b) => {
-            const needsA = a.annualFeeAmount > 0 && !a.isAnnualFeeDateSet;
-            const needsB = b.annualFeeAmount > 0 && !b.isAnnualFeeDateSet;
+            if (!!a.closedDate !== !!b.closedDate) return a.closedDate ? 1 : -1;
+
+            const needsA = !a.closedDate && a.annualFeeAmount > 0 && !a.isAnnualFeeDateSet;
+            const needsB = !b.closedDate && b.annualFeeAmount > 0 && !b.isAnnualFeeDateSet;
             
             if (needsA && !needsB) return -1;
             if (!needsA && needsB) return 1;
@@ -315,6 +378,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               key={card.id}
               card={card}
               onDeleteCard={onDeleteCard}
+              onCloseCard={onCloseCard}
+              onReopenCard={onReopenCard}
               onUpdateAnnualFeeDate={onUpdateAnnualFeeDate}
               onDeleteAnniversary={onDeleteAnniversary}
               onAddBenefit={onAddBenefit}
